@@ -140,14 +140,22 @@ No `sequence` field is stored — the display position ("Correction 1", "Correct
 array's order already encodes it. Storing it separately would just duplicate
 information already implicit in list order.
 
-### Value object: `Money`
+### Value object: `Money` — via `moneyphp/money`
 
-- Stores the amount in minor units (`int`, cents) — never `float`, since the example
-  includes exact-cent rounding corrections ($0.10, $0.20) where float error would be a
-  real risk.
-- Immutable, with arithmetic (`add`, `subtract`, `negate`) and equality by value.
-- Currency is fixed (USD) — the assignment has no multi-currency requirement, so
-  supporting it would be unnecessary scope.
+Uses the `moneyphp/money` library (`Money\Money`, `Money\Currency`) rather than a
+hand-rolled value object. Same reasoning as choosing `symfony/uid` for IDs instead of
+hand-rolling UUID v7: correct monetary rounding, arithmetic, and comparison are a
+well-solved problem, and a mature, widely-used library gets the edge cases right in
+ways that are easy to get subtly wrong by hand — exactly what the assignment's
+worked example ($0.10/$0.20 rounding corrections) is designed to catch.
+
+- Amounts are integer minor units under the hood (never `float`) — the library
+  enforces this, it isn't something this project has to get right on its own.
+- Currency is always constructed as `Money\Currency('USD')` — the assignment has no
+  multi-currency requirement, so the library's multi-currency support exists but is
+  never exercised.
+- `Money\Money` is immutable, with `add`/`subtract`/`equals`/`compare` already
+  provided — no custom arithmetic to write or test.
 
 ### `auditHistory()`
 
@@ -186,8 +194,10 @@ sync with the aggregate's actual state.
 - `currentValue()` and `auditHistory()` can never drift from the aggregate's real
   state, since both are pure computations over `calculatedValue` + `corrections`
   rather than separately maintained state.
-- Using integer cents for `Money` removes an entire class of rounding bugs that the
-  assignment's example is specifically designed to catch (steps 6–8).
+- Using `moneyphp/money` (integer minor units under the hood, never `float`) removes
+  an entire class of rounding bugs that the assignment's example is specifically
+  designed to catch (steps 6–8), without this project having to implement or test
+  that arithmetic itself.
 - The aggregate stays small and self-contained; no dependency on a `User`/`Employee`
   aggregate or an event store keeps the design easy to unit test in isolation.
 
@@ -227,3 +237,8 @@ sync with the aggregate's actual state.
 - **Event Sourcing** — rejected in favor of plain state fields; the assignment
   explicitly allows a simpler design, and the real codebase's DDD+CQRS+ES style is
   stated as optional context, not a requirement.
+- **Hand-rolled `Money` value object** — the original plan, then rejected in favor of
+  `moneyphp/money`. Correct monetary arithmetic/rounding is a well-solved problem
+  outside this domain's core concern; reimplementing it risks subtly getting wrong
+  exactly the kind of cent-precision cases the assignment's own example is built to
+  test, for no benefit over a mature library.

@@ -121,8 +121,14 @@ Recommended time budget: 2–6 hours.
 
 ## Working agreement
 
-- Wait for explicit go-ahead before writing implementation code — scaffolding/docs
-  like this file are fine to add proactively.
+- **Never create files or run commands (composer, docker, git, package installs,
+  etc.) without an explicit, unambiguous instruction to do so — this includes
+  scaffolding, not just domain implementation code.** A question about how to do
+  something ("як це зробити?") is a request for an explanation, not permission to do
+  it. Default to explaining the steps in chat and wait for an explicit go-ahead
+  before executing anything. (Writing/updating markdown docs the user directly asked
+  for, like this file or an ADR, is the one thing that doesn't need re-confirming
+  each time.)
 - **Never run `git commit` (or `git push`) in this repo.** The user handles all
-  commits themselves. Editing/creating files is fine; leave staging and committing to
-  the user.
+  commits themselves. Editing/creating files is fine when explicitly asked; leave
+  staging and committing to the user.

@@ -32,6 +32,65 @@ even though today it implements only what ADR-0001 describes. A future, genuinel
 separate bounded context (if one ever appeared) would be a sibling folder next to
 `Payroll/`, not a restructuring of it.
 
+### Composer package name vs. PHP namespace
+
+These are deliberately independent settings, even though `composer init` suggests a
+PSR-4 namespace derived from the package name by default:
+
+- **Composer package name: `dkoniushenko/alcor-test`** — identifies the whole
+  repository/deliverable, matching the actual repo/folder name rather than
+  describing what's inside it. Vendor is the candidate's own handle, not `alcor`,
+  since this is a take-home submission, not an officially Alcor-owned package.
+- **PHP namespace root: `Alcor\`** — represents the fictional organization/product
+  ("Alcor OS") at the code level. `Alcor\Payroll\` is the first module beneath it.
+  Deliberately *not* `AlcorTest\`: the word "test" describes this repo's nature (a
+  coding-test submission), not the domain, and folding it into the namespace root
+  would also stutter against the `Tests\` segment already used for test namespaces
+  (`Alcor\Tests\...` vs. the awkward `AlcorTest\Tests\...`).
+
+An earlier package name, `alcor/payroll`, made `composer init` suggest
+`Alcor\Payroll` as the PSR-4 namespace — which happened to be exactly the module
+namespace this ADR already wanted, and initially looked like a naming collision
+between "the project" and "the `Payroll` module". It isn't one: the package name and
+the namespace don't have to match at all. Settling on `dkoniushenko/alcor-test`
+makes that independence obvious in practice, since it no longer overlaps with either
+the namespace root or the module name at all.
+
+### PSR-4 autoload strategy: one root mapping, not one per module
+
+Rather than adding a dedicated PSR-4 entry per module (`"Alcor\\Payroll\\":
+"src/Payroll/"`, then `"Alcor\\Identity\\": "src/Identity/"` for every future
+module), `composer.json` maps the single organization-level prefix once:
+
+```json
+"autoload": {
+    "psr-4": { "Alcor\\": "src/" }
+}
+```
+
+PSR-4 resolves everything after the mapped prefix directly onto the filesystem:
+`Alcor\Payroll\Domain\Earning` → strip `Alcor\` → `Payroll\Domain\Earning` →
+`src/Payroll/Domain/Earning.php`, exactly the path this ADR's tree already
+specifies. Adding a second module later (`Alcor\Identity\...`) needs zero
+`composer.json` changes — creating `src/Identity/...` is enough, since it already
+falls under the one mapped prefix.
+
+The same idea applies to `autoload-dev`: one mapping for the whole test namespace
+root instead of one entry per module per suite:
+
+```json
+"autoload-dev": {
+    "psr-4": { "Alcor\\Tests\\": "tests/" }
+}
+```
+
+This reorders the test namespace segments compared to a naive per-module version —
+`Alcor\Tests\Unit\Payroll\Domain\EarningTest` (`Tests`, then suite, then module)
+rather than `Alcor\Payroll\Tests\Unit\...` (module, then `Tests`) — because that
+order is what makes the single mapping valid: strip `Alcor\Tests\`, and
+`Unit\Payroll\Domain\EarningTest` maps directly onto `Unit/Payroll/Domain/
+EarningTest.php`, matching the tree exactly.
+
 ### Layers, and the dependency rule
 
 Each module has four layers:
@@ -48,7 +107,14 @@ Dependency direction is one-way, inward, toward `Domain/`:
 
 - `Domain/` depends on nothing else in the project and on no framework — it defines
   ports (`EarningRepositoryInterface`, `ClockInterface`, `EventDispatcherInterface`) as
-  interfaces, never concrete implementations.
+  interfaces, never concrete implementations. The one accepted exception is pure
+  value-type libraries with no infrastructure coupling of their own — `symfony/uid`
+  and `moneyphp/money` are used directly in `Domain/` (in `EarningId`/`CorrectionId`/
+  etc. and in `Money`-typed fields), not hidden behind a port. This is acceptable,
+  often unavoidable, dependency leakage: unlike a database client, HTTP client, or
+  ORM (infrastructure concerns, which *do* require a port), a UUID or money-arithmetic
+  library is itself just a value type with no side effects or environment coupling —
+  functionally no different from depending on PHP's own `DateTimeImmutable`.
 - `Application/` depends only on `Domain/`.
 - `Infrastructure/` implements `Domain/`'s ports; it may depend on `Domain/` and
   external libraries, never the reverse.
@@ -187,19 +253,24 @@ alcor-test/
         └── FixedClock.php                        # implements ClockInterface
 ```
 
-Indicative `composer.json` autoload mapping:
+Indicative `composer.json`:
 
 ```json
 {
+    "name": "dkoniushenko/alcor-test",
+    "description": "History of Manual Adjustments to an Earning Line",
+    "type": "project",
+    "authors": [
+        { "name": "Danylo Koniushenko" }
+    ],
+    "require": {
+        "php": "^8.4"
+    },
     "autoload": {
-        "psr-4": { "Alcor\\Payroll\\": "src/Payroll/" }
+        "psr-4": { "Alcor\\": "src/" }
     },
     "autoload-dev": {
-        "psr-4": {
-            "Alcor\\Payroll\\Tests\\Unit\\": "tests/Unit/Payroll/",
-            "Alcor\\Payroll\\Tests\\Integration\\": "tests/Integration/Payroll/",
-            "Alcor\\Payroll\\Tests\\Fixtures\\": "tests/Fixtures/"
-        }
+        "psr-4": { "Alcor\\Tests\\": "tests/" }
     }
 }
 ```
@@ -212,7 +283,8 @@ Indicative `composer.json` autoload mapping:
   of concerns", "dependency injection", and "small accurate interfaces" visible
   directly in the file layout, not just arguable from reading class bodies.
 - Adding a second bounded context later is additive (a sibling module folder), not a
-  refactor of `Payroll/`.
+  refactor of `Payroll/` — and thanks to the single root PSR-4 mapping, it needs zero
+  `composer.json` changes too.
 - Consistent Symfony-style naming (suffixes + acronym casing) makes it possible to
   tell whether something is an interface, trait, exception, or concrete class from
   its name alone, without opening the file.
@@ -251,3 +323,20 @@ Indicative `composer.json` autoload mapping:
 - **Lowercase `tests/unit/`, `tests/integration/`** — rejected in favor of PascalCase
   (`Unit/`, `Integration/`) to mirror PSR-4 namespace segments, conventionally
   StudlyCaps in PHP.
+- **One PSR-4 entry per module** (`"Alcor\\Payroll\\": "src/Payroll/"`, and a new
+  entry for every future module) — rejected in favor of a single root mapping
+  (`"Alcor\\": "src/"`), which needs no `composer.json` change when a module is
+  added and is the more common convention for this project shape. Same reasoning
+  applied to `autoload-dev` (`"Alcor\\Tests\\": "tests/"` instead of one entry per
+  module per suite).
+- **Composer vendor `alcor`** (package name `alcor/payroll`) — rejected in favor of
+  `dkoniushenko/alcor-test`, matching the actual repository name; using `alcor` as
+  the vendor would misleadingly imply an officially Alcor-owned/published package
+  rather than a candidate's take-home submission. This is also what made the PSR-4
+  namespace suggestion during `composer init` coincidentally match the `Payroll`
+  module name and initially look like a collision — see "Composer package name vs.
+  PHP namespace" above.
+- **Namespace root `AlcorTest\`** (mirroring the package name `alcor-test`) —
+  rejected in favor of the bare `Alcor\`; folding "test" into the namespace would
+  describe the repo's nature, not the domain, and would stutter against the
+  `Tests\` segment already used for test namespaces (`AlcorTest\Tests\...`).
