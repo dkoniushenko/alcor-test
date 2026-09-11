@@ -18,13 +18,16 @@ final class CorrectionTest extends TestCase
     #[DataProvider('positiveDataProvider')]
     public function testPositive(Money $amount): void
     {
+        // Given
         $id = CorrectionId::generate();
         $comment = 'Correcting mistake in adjustment #4';
         $correctedBy = PayrollSpecialistId::generate();
         $recordedAt = new \DateTimeImmutable('2026-01-01T00:00:00+00:00');
 
+        // When
         $correction = new Correction($id, $amount, $comment, $correctedBy, $recordedAt);
 
+        // Then
         self::assertTrue($id->equals($correction->id));
         self::assertTrue($amount->equals($correction->amount));
         self::assertSame($comment, $correction->comment);
@@ -45,8 +48,10 @@ final class CorrectionTest extends TestCase
 
     public function testConstructingWithAZeroAmountIsRejected(): void
     {
+        // Expects
         $this->expectException(CorrectionAmountCannotBeZeroException::class);
 
+        // When
         new Correction(
             CorrectionId::generate(),
             Money::USD(0),
@@ -59,8 +64,10 @@ final class CorrectionTest extends TestCase
     #[DataProvider('invalidCommentProvider')]
     public function testConstructingWithAnInvalidCommentIsRejected(string $comment): void
     {
+        // Expects
         $this->expectException(CorrectionCommentCannotBeEmptyException::class);
 
+        // When
         new Correction(
             CorrectionId::generate(),
             Money::USD(-4555),
