@@ -132,6 +132,10 @@ project-wide:
 - Treat acronyms as ordinary words in PascalCase — first letter capitalized, rest
   lowercase (`Ui`, not `UI`; `Cli`, not `CLI`; `Id`, not `ID` — already used in
   `EarningId`, `CorrectionId`, etc.).
+- Domain exceptions extend the shared `AbstractDomainException`
+  (`Shared/Domain/Exception/`, itself extending SPL's `\DomainException`), not an
+  SPL exception directly — lets calling code catch any business-rule violation
+  uniformly regardless of which module raised it.
 
 ### Tests
 
@@ -154,7 +158,8 @@ src/
 ├── Shared/
 │   └── Domain/
 │       ├── ValueObject/         # shared kernel — see "src/Shared/" above
-│       └── Clock/                # ditto — no Payroll-specific meaning
+│       ├── Clock/                # ditto — no Payroll-specific meaning
+│       └── Exception/            # AbstractDomainException — base for all domain exceptions
 └── Payroll/
     ├── Domain/
     │   ├── Event/
