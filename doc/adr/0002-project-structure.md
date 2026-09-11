@@ -45,7 +45,8 @@ Rules for what goes here, and the dependency direction:
 
 - `Shared/` follows the same internal layering as any other module — `Domain/`, plus
   `Application/` now that `EventDispatcherInterface` needs it (see "Domain events"
-  below); `Infrastructure/`/`Ui/` only if it ever genuinely needs them.
+  below), plus `Infrastructure/` now that `SystemClock` (the real `ClockInterface`
+  implementation) needs it too; `Ui/` only if it ever genuinely needs it.
 - Other modules may depend on `Shared/` (e.g. `Payroll\Domain\ValueObject\EarningId
   extends Shared\Domain\ValueObject\AbstractUuidId`), but `Shared/` must never depend
   back on `Payroll/` or any other module — that direction would quietly recreate a
@@ -199,8 +200,10 @@ src/
 │   │   ├── Clock/                 # ditto — no Payroll-specific meaning
 │   │   ├── Exception/             # AbstractDomainException — base for all domain exceptions
 │   │   └── Event/                 # AbstractDomainEvent, RecordsDomainEventsTrait
-│   └── Application/
-│       └── Event/                 # EventDispatcherInterface — an Application, not Domain, port
+│   ├── Application/
+│   │   └── Event/                 # EventDispatcherInterface — an Application, not Domain, port
+│   └── Infrastructure/
+│       └── Clock/                 # SystemClock — implements Domain\Clock\ClockInterface
 └── Payroll/
     ├── Domain/
     │   ├── Event/

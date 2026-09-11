@@ -99,14 +99,16 @@ clock port, domain-event plumbing).
 src/
 ├── Shared/                     cross-module kernel — see ADR-0002
 │   ├── Domain/                  implemented
-│   └── Application/              implemented
+│   ├── Application/              implemented
+│   └── Infrastructure/            implemented — SystemClock
 └── Payroll/
     ├── Domain/                  implemented — Earning, Correction, audit history, events
     ├── Application/
-    │   ├── Command/              implemented — CalculateEarning, RecalculateEarning, AddCorrection
-    │   └── Query/                 implemented — GetAuditHistory
+    │   ├── Command/ + CommandHandler/   implemented — CalculateEarning, RecalculateEarning, AddCorrection
+    │   ├── Query/ + QueryHandler/         implemented — GetAuditHistory
+    │   └── Exception/                      implemented — EarningNotFoundException
     ├── Infrastructure/
-    │   └── Persistence/           implemented — InMemoryEarningRepository (SystemClock still pending)
+    │   └── Persistence/           implemented — InMemoryEarningRepository
     └── Ui/
         └── Cli/                   planned, not yet implemented
 ```
@@ -133,9 +135,9 @@ events are recorded on the aggregate but not yet dispatched anywhere —
 `EventDispatcherInterface` has no implementation or consumer yet, deliberately
 deferred until something actually needs to react to them.
 
-Not implemented yet: a real `SystemClock` (only the test-only `FixedClock` exists so
-far) and a CLI entry point (`Ui/Cli/` still exists only as an empty `.gitkeep`
-placeholder) to wire everything together and actually run it end-to-end.
+Not implemented yet: a CLI entry point (`Ui/Cli/` still exists only as an empty
+`.gitkeep` placeholder) to wire everything together — `SystemClock`, the repository,
+and the command/query handlers — and actually run it end-to-end.
 
 ## Running it
 
