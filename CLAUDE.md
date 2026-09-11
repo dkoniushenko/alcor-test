@@ -7,13 +7,20 @@ assignment.docx.pdf`.
 **Implementation has not started yet.** Only Docker scaffolding exists so far. Do not
 begin implementing until explicitly asked.
 
-Architectural/design decisions are recorded as ADRs in **`doc/adr/`**. The domain model
-has been designed and agreed on — see
-**[doc/adr/0001-earning-domain-model.md](doc/adr/0001-earning-domain-model.md)** for
-the full `Earning`/`Correction`/`Money` design, naming decisions, and the reasoning
-behind them (including alternatives considered and rejected). Read it before writing
-any domain code so naming and invariants stay consistent with what was agreed. Future
-non-trivial design decisions should get their own numbered ADR in that folder.
+Architectural/design decisions are recorded as ADRs in **`doc/adr/`**:
+
+- **[0001-earning-domain-model.md](doc/adr/0001-earning-domain-model.md)** — the
+  `Earning`/`Correction`/`Money` domain model: naming, the core `currentValue()`
+  formula, invariants, and alternatives considered and rejected.
+- **[0002-project-structure.md](doc/adr/0002-project-structure.md)** — the modular
+  monolith / DDD layered folder structure (`src/Payroll/Domain|Application|
+  Infrastructure|Ui`), Command+Handler application layer, domain events placement,
+  Symfony naming conventions (`Interface`/`Trait`/`Exception` suffixes, acronym
+  casing), and the `tests/Unit|Integration|Fixtures` split.
+
+Read both before writing any code so naming, layering, and invariants stay consistent
+with what was agreed. Future non-trivial design decisions should get their own
+numbered ADR in that folder.
 
 ## Task
 
