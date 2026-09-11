@@ -25,71 +25,47 @@ layered internals. Only one module exists for this exercise.
 
 ### Module boundary
 
-`src/Payroll/` is the (only, for now) module. Named `Payroll` rather than `Earnings`
-— broader on purpose, to leave room for the module to grow beyond just the `Earning`
-aggregate if the proof of concept were ever extended (e.g. pay runs, deductions),
-even though today it implements only what ADR-0001 describes. A future, genuinely
-separate bounded context (if one ever appeared) would be a sibling folder next to
-`Payroll/`, not a restructuring of it.
+`src/Payroll/` is the (only, for now) domain module. Named `Payroll` rather than
+`Earnings` — broader on purpose, to leave room for the module to grow beyond just the
+`Earning` aggregate if the proof of concept were ever extended (e.g. pay runs,
+deductions), even though today it implements only what ADR-0001 describes. A future,
+genuinely separate bounded context (if one ever appeared) would be a sibling folder
+next to `Payroll/`, not a restructuring of it.
 
-### Composer package name vs. PHP namespace
+### `src/Shared/`: a deliberately small shared kernel
 
-These are deliberately independent settings, even though `composer init` suggests a
-PSR-4 namespace derived from the package name by default:
+`src/Shared/` holds code with no allegiance to a single module — the DDD "shared
+kernel" pattern: a small, explicitly shared subset of the domain model that more than
+one bounded context may depend on. Currently just `AbstractUuidId`
+(`Shared/Domain/ValueObject/AbstractUuidId.php`, moved here from `Payroll/` once it
+became clear it wasn't a `Payroll` concept at all — a UUID-based identifier base
+class is generic value-object machinery any future module could equally need).
 
-- **Composer package name: `dkoniushenko/alcor-test`** — identifies the whole
-  repository/deliverable, matching the actual repo/folder name rather than
-  describing what's inside it. Vendor is the candidate's own handle, not `alcor`,
-  since this is a take-home submission, not an officially Alcor-owned package.
-- **PHP namespace root: `Alcor\`** — represents the fictional organization/product
-  ("Alcor OS") at the code level. `Alcor\Payroll\` is the first module beneath it.
-  Deliberately *not* `AlcorTest\`: the word "test" describes this repo's nature (a
-  coding-test submission), not the domain, and folding it into the namespace root
-  would also stutter against the `Tests\` segment already used for test namespaces
-  (`Alcor\Tests\...` vs. the awkward `AlcorTest\Tests\...`).
+Rules for what goes here, and the dependency direction:
 
-An earlier package name, `alcor/payroll`, made `composer init` suggest
-`Alcor\Payroll` as the PSR-4 namespace — which happened to be exactly the module
-namespace this ADR already wanted, and initially looked like a naming collision
-between "the project" and "the `Payroll` module". It isn't one: the package name and
-the namespace don't have to match at all. Settling on `dkoniushenko/alcor-test`
-makes that independence obvious in practice, since it no longer overlaps with either
-the namespace root or the module name at all.
+- `Shared/` follows the same internal layering as any other module (`Domain/` for
+  now; `Application/`/`Infrastructure/`/`Ui/` only if it ever genuinely needs them).
+- Other modules may depend on `Shared/` (e.g. `Payroll\Domain\ValueObject\EarningId
+  extends Shared\Domain\ValueObject\AbstractUuidId`), but `Shared/` must never depend
+  back on `Payroll/` or any other module — that direction would quietly recreate a
+  circular dependency between modules and defeat the point of having a shared kernel.
+- It should stay small and change rarely. Something earns its way into `Shared/` by
+  being genuinely, identically useful to more than one module — not merely similar-
+  looking. Anything with module-specific business meaning belongs in that module, not
+  here.
 
-### PSR-4 autoload strategy: one root mapping, not one per module
+### PSR-4 autoload strategy
 
-Rather than adding a dedicated PSR-4 entry per module (`"Alcor\\Payroll\\":
-"src/Payroll/"`, then `"Alcor\\Identity\\": "src/Identity/"` for every future
-module), `composer.json` maps the single organization-level prefix once:
+One root mapping per prefix, not one per module: `Alcor\` → `src/` for production
+code, `Alcor\Tests\` → `tests/` for tests (see `composer.json` for the actual
+entries — package name and the exact mapping live there, not duplicated here). PSR-4
+resolves everything after the mapped prefix straight onto the filesystem, so adding a
+new module needs zero `composer.json` changes — creating `src/Identity/...` under
+the existing `Alcor\` mapping would be enough.
 
-```json
-"autoload": {
-    "psr-4": { "Alcor\\": "src/" }
-}
-```
-
-PSR-4 resolves everything after the mapped prefix directly onto the filesystem:
-`Alcor\Payroll\Domain\Earning` → strip `Alcor\` → `Payroll\Domain\Earning` →
-`src/Payroll/Domain/Earning.php`, exactly the path this ADR's tree already
-specifies. Adding a second module later (`Alcor\Identity\...`) needs zero
-`composer.json` changes — creating `src/Identity/...` is enough, since it already
-falls under the one mapped prefix.
-
-The same idea applies to `autoload-dev`: one mapping for the whole test namespace
-root instead of one entry per module per suite:
-
-```json
-"autoload-dev": {
-    "psr-4": { "Alcor\\Tests\\": "tests/" }
-}
-```
-
-This reorders the test namespace segments compared to a naive per-module version —
-`Alcor\Tests\Unit\Payroll\Domain\EarningTest` (`Tests`, then suite, then module)
-rather than `Alcor\Payroll\Tests\Unit\...` (module, then `Tests`) — because that
-order is what makes the single mapping valid: strip `Alcor\Tests\`, and
-`Unit\Payroll\Domain\EarningTest` maps directly onto `Unit/Payroll/Domain/
-EarningTest.php`, matching the tree exactly.
+Test namespaces are ordered `Alcor\Tests\<Unit|Integration>\<Module>\...` — `Tests`
+right after `Alcor\`, not `Alcor\<Module>\Tests\...` — since that's what makes the
+single `autoload-dev` mapping valid.
 
 ### Layers, and the dependency rule
 
@@ -167,112 +143,45 @@ suites) live in `tests/Fixtures/` — matching Symfony's own convention for exac
 this purpose (its components use `Tests/Fixtures/` for dummy/stub classes, not only
 static data).
 
-### Full tree
+### Namespace / folder skeleton
+
+This is the part meant to stay stable and be remembered — individual files aren't
+tracked here (check the actual `src/`/`tests/` trees for what currently exists in
+each folder); only add a new line below when a genuinely new folder/layer appears.
 
 ```
-alcor-test/
-├── composer.json
-├── composer.lock
-├── Dockerfile
-├── docker-compose.yml
-├── xdebug.ini
-├── .gitignore
-├── README.md
-├── CLAUDE.md
-├── doc/
-│   ├── Alcor code assignment.docx.pdf
-│   └── adr/
-│       ├── 0001-earning-domain-model.md
-│       └── 0002-project-structure.md
-├── bin/
-│   └── console                            # CLI entry point / composition root
-├── src/
+src/
+├── Shared/
+│   └── Domain/
+│       └── ValueObject/        # shared kernel — see "src/Shared/" above
+└── Payroll/
+    ├── Domain/
+    │   ├── Event/
+    │   ├── Exception/
+    │   ├── ValueObject/
+    │   ├── Audit/
+    │   └── Clock/
+    ├── Application/
+    │   ├── Command/
+    │   └── Query/
+    ├── Infrastructure/
+    │   ├── Persistence/
+    │   └── Clock/
+    └── Ui/
+        └── Cli/
+
+tests/
+├── Unit/
+│   ├── Shared/
+│   │   └── Domain/ValueObject/
 │   └── Payroll/
 │       ├── Domain/
-│       │   ├── Earning.php                 # aggregate root
-│       │   ├── Correction.php              # entity
-│       │   ├── EarningRepositoryInterface.php
-│       │   ├── Event/
-│       │   │   ├── RecordsDomainEventsTrait.php
-│       │   │   ├── EarningCalculated.php
-│       │   │   ├── CorrectionAdded.php
-│       │   │   └── EventDispatcherInterface.php
-│       │   ├── Exception/
-│       │   │   └── CorrectionCommentCannotBeEmptyException.php
-│       │   ├── ValueObject/
-│       │   │   ├── EarningId.php
-│       │   │   ├── EmployeeId.php
-│       │   │   ├── CorrectionId.php
-│       │   │   ├── PayrollSpecialistId.php
-│       │   │   └── Money.php
-│       │   ├── Audit/
-│       │   │   ├── AuditHistory.php
-│       │   │   └── AuditEntry.php
-│       │   └── Clock/
-│       │       └── ClockInterface.php
-│       │
-│       ├── Application/
-│       │   ├── Command/
-│       │   │   ├── AddCorrection.php
-│       │   │   ├── AddCorrectionHandler.php
-│       │   │   ├── RecalculateEarning.php
-│       │   │   └── RecalculateEarningHandler.php
-│       │   └── Query/
-│       │       ├── GetAuditHistory.php
-│       │       └── GetAuditHistoryHandler.php
-│       │
+│       └── Application/
+├── Integration/
+│   └── Payroll/
 │       ├── Infrastructure/
-│       │   ├── Persistence/
-│       │   │   └── InMemoryEarningRepository.php
-│       │   └── Clock/
-│       │       └── SystemClock.php          # implements ClockInterface
-│       │
 │       └── Ui/
-│           └── Cli/
-│               ├── AddCorrectionCommand.php
-│               ├── RecalculateCommand.php
-│               └── ShowAuditHistoryCommand.php
-│
-└── tests/
-    ├── Unit/
-    │   └── Payroll/
-    │       ├── Domain/
-    │       │   ├── EarningTest.php
-    │       │   ├── CorrectionTest.php
-    │       │   └── MoneyTest.php
-    │       └── Application/
-    │           ├── AddCorrectionHandlerTest.php
-    │           └── RecalculateEarningHandlerTest.php
-    ├── Integration/
-    │   └── Payroll/
-    │       ├── Infrastructure/
-    │       │   └── InMemoryEarningRepositoryTest.php
-    │       └── Ui/
-    │           └── ConsoleApplicationTest.php   # end-to-end through bin/console
-    └── Fixtures/
-        └── FixedClock.php                        # implements ClockInterface
-```
-
-Indicative `composer.json`:
-
-```json
-{
-    "name": "dkoniushenko/alcor-test",
-    "description": "History of Manual Adjustments to an Earning Line",
-    "type": "project",
-    "authors": [
-        { "name": "Danylo Koniushenko" }
-    ],
-    "require": {
-        "php": "^8.4"
-    },
-    "autoload": {
-        "psr-4": { "Alcor\\": "src/" }
-    },
-    "autoload-dev": {
-        "psr-4": { "Alcor\\Tests\\": "tests/" }
-    }
-}
+└── Fixtures/
 ```
 
 ## Consequences
@@ -319,7 +228,9 @@ Indicative `composer.json`:
 - **`tests/Support/`, `tests/Shared/`, or `tests/Tools/`** for test doubles —
   rejected in favor of `tests/Fixtures/`, matching Symfony's own established
   convention for dummy/stub test classes, keeping the whole project under one naming
-  philosophy.
+  philosophy. (Unrelated to the later `Shared/` module below — that one names a
+  cross-module shared kernel, not a folder for test doubles; this rejected option
+  would have meant something different if picked.)
 - **Lowercase `tests/unit/`, `tests/integration/`** — rejected in favor of PascalCase
   (`Unit/`, `Integration/`) to mirror PSR-4 namespace segments, conventionally
   StudlyCaps in PHP.
@@ -329,14 +240,8 @@ Indicative `composer.json`:
   added and is the more common convention for this project shape. Same reasoning
   applied to `autoload-dev` (`"Alcor\\Tests\\": "tests/"` instead of one entry per
   module per suite).
-- **Composer vendor `alcor`** (package name `alcor/payroll`) — rejected in favor of
-  `dkoniushenko/alcor-test`, matching the actual repository name; using `alcor` as
-  the vendor would misleadingly imply an officially Alcor-owned/published package
-  rather than a candidate's take-home submission. This is also what made the PSR-4
-  namespace suggestion during `composer init` coincidentally match the `Payroll`
-  module name and initially look like a collision — see "Composer package name vs.
-  PHP namespace" above.
-- **Namespace root `AlcorTest\`** (mirroring the package name `alcor-test`) —
-  rejected in favor of the bare `Alcor\`; folding "test" into the namespace would
-  describe the repo's nature, not the domain, and would stutter against the
-  `Tests\` segment already used for test namespaces (`AlcorTest\Tests\...`).
+- **Keeping `AbstractUuidId` inside `Payroll/`** — the original placement, then moved
+  to `Shared/` once it became clear the class has no `Payroll`-specific meaning at
+  all (it's generic UUID-identifier machinery, not a payroll concept); leaving it in
+  `Payroll/` would have meant a future module either duplicating it or reaching into
+  `Payroll/`'s internals, both worse than a small, explicit shared kernel.
