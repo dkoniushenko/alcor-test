@@ -103,17 +103,16 @@ src/
 └── Payroll/
     ├── Domain/                  implemented — Earning, Correction, audit history, events
     ├── Application/
-    │   ├── Command/              planned, not yet implemented
-    │   └── Query/                 planned, not yet implemented
+    │   ├── Command/              implemented — CalculateEarning, RecalculateEarning, AddCorrection
+    │   └── Query/                 implemented — GetAuditHistory
     ├── Infrastructure/
-    │   └── Persistence/           planned, not yet implemented
+    │   └── Persistence/           implemented — InMemoryEarningRepository (SystemClock still pending)
     └── Ui/
         └── Cli/                   planned, not yet implemented
 ```
 
-The `Application`/`Infrastructure`/`Ui` folders already exist in the repo (empty,
-holding a `.gitkeep` each) purely to show the intended shape ahead of implementing
-them — see "Current status" below.
+`Ui/Cli/` still exists only as an empty `.gitkeep` placeholder — see "Current status"
+below.
 
 Full reasoning, alternatives considered, and the folder/namespace skeleton are in:
 
@@ -126,10 +125,17 @@ Full reasoning, alternatives considered, and the folder/namespace skeleton are i
 
 The domain model (`Earning`, `Correction`, value objects, domain events, audit
 history) is implemented and tested against the assignment's worked example.
-Application (command/query handlers), Infrastructure (in-memory repository, system
-clock), and a CLI entry point are not implemented yet — their folders exist as empty
-scaffolding (see "Architecture" above) so the intended structure is visible even
-before there's code in them.
+
+The Application layer (`CalculateEarning`, `RecalculateEarning`, `AddCorrection`
+commands + `GetAuditHistory` query, each with a handler) and an in-memory
+`EarningRepositoryInterface` implementation are also implemented and tested. Domain
+events are recorded on the aggregate but not yet dispatched anywhere —
+`EventDispatcherInterface` has no implementation or consumer yet, deliberately
+deferred until something actually needs to react to them.
+
+Not implemented yet: a real `SystemClock` (only the test-only `FixedClock` exists so
+far) and a CLI entry point (`Ui/Cli/` still exists only as an empty `.gitkeep`
+placeholder) to wire everything together and actually run it end-to-end.
 
 ## Running it
 

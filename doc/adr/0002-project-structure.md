@@ -107,13 +107,22 @@ concrete implementation at once.
 
 ### Application layer: Command + Handler
 
-Each use case is a pair: an immutable command/query DTO (`AddCorrection`,
-`RecalculateEarning`, `GetAuditHistory`) and a handler that depends on `Domain/` ports
-to carry it out (`AddCorrectionHandler`, `RecalculateEarningHandler`,
-`GetAuditHistoryHandler`). Chosen over a single generic "Application Service" class
-per aggregate specifically to demonstrate the small, single-purpose
-command/handler pattern the assignment's grading list calls out — may be
-reconsidered if it proves like overkill once implementation starts.
+Each use case is a pair: an immutable command/query DTO (`CalculateEarning`,
+`RecalculateEarning`, `AddCorrection`, `GetAuditHistory`) and a handler that depends
+on `Domain/` ports to carry it out (`CalculateEarningHandler`,
+`RecalculateEarningHandler`, `AddCorrectionHandler`, `GetAuditHistoryHandler`).
+Chosen over a single generic "Application Service" class per aggregate specifically
+to demonstrate the small, single-purpose command/handler pattern the assignment's
+grading list calls out — may be reconsidered if it proves like overkill once
+implementation starts.
+
+DTOs and handlers live in **separate, parallel folders** — `Command/`/`CommandHandler/`
+and `Query/`/`QueryHandler/` — rather than co-located in one folder. This mirrors
+Symfony Messenger's own documented convention (`Message/` + `MessageHandler/`),
+which the project already follows for naming/coding-style elsewhere. A DTO is a pure
+data-transfer message (in principle serializable, queueable); a handler is executable
+logic — different concerns even within the same layer, and separate folders let
+"all commands" and "all handlers" each read as a flat, unmixed list.
 
 ### Domain events
 
@@ -165,6 +174,17 @@ suites) live in `tests/Fixtures/` — matching Symfony's own convention for exac
 this purpose (its components use `Tests/Fixtures/` for dummy/stub classes, not only
 static data).
 
+The split is decided by what the test actually does, **not** by which `src/` layer
+the class under test lives in: `Infrastructure/` isn't automatically `Integration/`.
+`InMemoryEarningRepository` lives in `Infrastructure/` but has no real I/O — it's a
+plain array — so its test is fast and dependency-free, and belongs in
+`tests/Unit/Payroll/Infrastructure/`, not `Integration/`. `Integration/` is reserved
+for tests that actually cross a real boundary — e.g. the eventual `Ui/`
+`ConsoleApplicationTest.php`, which will exercise the full wired-up application
+through `bin/console`. If a genuinely I/O-bound Infrastructure adapter (a real
+database-backed repository, say) is ever added, *that* implementation's test would
+belong in `Integration/`.
+
 ### Namespace / folder skeleton
 
 This is the part meant to stay stable and be remembered — individual files aren't
@@ -189,7 +209,10 @@ src/
     │   └── Audit/
     ├── Application/
     │   ├── Command/
-    │   └── Query/
+    │   ├── CommandHandler/
+    │   ├── Query/
+    │   ├── QueryHandler/
+    │   └── Exception/
     ├── Infrastructure/
     │   └── Persistence/
     └── Ui/
@@ -203,11 +226,11 @@ tests/
 │   │       └── Event/
 │   └── Payroll/
 │       ├── Domain/
-│       └── Application/
+│       ├── Application/
+│       └── Infrastructure/       # e.g. InMemoryEarningRepository — no real I/O
 ├── Integration/
 │   └── Payroll/
-│       ├── Infrastructure/
-│       └── Ui/
+│       └── Ui/                    # e.g. the eventual ConsoleApplicationTest
 └── Fixtures/
 ```
 
