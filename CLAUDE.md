@@ -1,0 +1,121 @@
+# Alcor OS — Coding Test
+
+Take-home coding test for a job application at Alcor OS (an all-in-one platform for
+managing contractors for product companies). Assignment source: `doc/Alcor code
+assignment.docx.pdf`.
+
+**Implementation has not started yet.** Only Docker scaffolding exists so far. Do not
+begin implementing until explicitly asked.
+
+Architectural/design decisions are recorded as ADRs in **`doc/adr/`**. The domain model
+has been designed and agreed on — see
+**[doc/adr/0001-earning-domain-model.md](doc/adr/0001-earning-domain-model.md)** for
+the full `Earning`/`Correction`/`Money` design, naming decisions, and the reasoning
+behind them (including alternatives considered and rejected). Read it before writing
+any domain code so naming and invariants stay consistent with what was agreed. Future
+non-trivial design decisions should get their own numbered ADR in that folder.
+
+## Task
+
+Design and implement a domain model titled **"History of Manual Adjustments to an
+Earning Line"**.
+
+### Business case
+
+- A payroll specialist reviews a line with an employee's base salary that the system
+  calculates automatically.
+- Sometimes the specialist needs to manually correct it (e.g. a declined benefit or a
+  late correction).
+- The correction is entered as a positive or negative amount with a **mandatory
+  comment** explaining why.
+
+### Hard rules
+
+1. A single line can receive multiple corrections over time.
+   - Each correction must stay visible and traceable — **never edited or silently
+     deleted** once saved.
+   - If the specialist made a mistake, they add a **new** correction that offsets the
+     previous one (append-only).
+2. Once a line has received **at least one** manual correction, automatic system
+   recalculation must **no longer affect it** — the specialist's corrections take
+   permanent precedence, even if the underlying source data used to calculate the line
+   later changes (i.e. the system value gets frozen at the point of the first
+   correction).
+3. At any point it must be possible to see the line's **current value** and the **full
+   audit history** of corrections that produced it.
+
+### Worked example (must match exactly)
+
+| Step | Event | Amount | Comment | Value after step |
+|---|---|---|---|---|
+| 1 | System calculates the line | — | — | $1,000.00 |
+| 2 | Source data changes, system recalculates (no correction yet → allowed) | — | — | $1,050.00 |
+| 3 | Specialist adds a manual correction | −$45.55 | "Employee declined dental benefit; reversing deduction" | $1,004.45 |
+| 4 | Source data changes again, system attempts to recalculate | — | (ignored — line already has a manual correction) | $1,004.45 |
+| 5 | Specialist adds a second correction | +$100.10 | "Late correction: missed approved overtime bonus" | $1,104.55 |
+| 6 | Specialist adds a third correction | −$0.10 | "Minor rounding adjustment" | $1,104.45 |
+| 7 | Specialist adds a fourth correction | −$0.20 | "Second minor rounding adjustment" | $1,104.25 |
+| 8 | Specialist adds a compensating correction (fixing step 7) | +$0.20 | "Correcting mistake in adjustment #4" | $1,104.45 |
+
+Expected final audit history:
+
+| Entry | Value |
+|---|---|
+| System value (frozen at step 3) | $1,050.00 |
+| Adjustment 1 | −$45.55 |
+| Adjustment 2 | +$100.10 |
+| Adjustment 3 | −$0.10 |
+| Adjustment 4 | −$0.20 |
+| Adjustment 5 | +$0.20 |
+| Current (new) value | $1,104.45 |
+
+Any implementation must reproduce these exact numbers when run through this scenario.
+
+## Deliverables expected by Alcor
+
+- Solution written in easy to understand, modern PHP.
+- Test coverage with **PHPUnit**.
+- A **README** explaining how it works and any assumptions made.
+- Pushed to a **public** GitHub repo.
+- Using AI tools while working on this is explicitly welcomed/encouraged.
+
+## Grading emphasis (from the recruiter email template)
+
+Not everything needs to be demonstrated — treat this as a menu, not a checklist:
+
+- Modern PHP
+- Good separation / encapsulation of concerns
+- Small, accurate interfaces / classes / commands / events / aggregate boundaries
+- Dependency injection
+- Source control: conventional, meaningful commits and essential (non-redundant)
+  comments
+
+Their real codebase uses **DDD + CQRS + Event Sourcing**, but a simpler
+object-oriented design (no Event Sourcing) is explicitly acceptable — what matters is
+that the business rules are implemented correctly and reliably, and the design choice
+can be justified.
+
+**This is a data modeling exercise, not a UI/framework exercise.** No web UI or
+framework is needed — a CLI entry point plus unit tests is sufficient and preferred,
+to leave more time for the domain design itself.
+
+Recommended time budget: 2–6 hours.
+
+## Current project state / environment
+
+- No `composer.json` yet — `src/` is empty.
+- `Dockerfile`: `php:8.4-cli` base image with `xdebug` and `composer` (v2, copied from
+  the official composer image) installed.
+- `docker-compose.yml`: single `php` service, bind-mounts the repo to `/app`, runs
+  `tail -f /dev/null` (exec into it to run commands), Xdebug configured to connect back
+  to the host IDE (`host.docker.internal:9003`, idekey `PHPSTORM`).
+- `.gitignore` currently only excludes `.idea`.
+- `doc/` holds the original assignment PDF (not meant to be treated as source code).
+
+## Working agreement
+
+- Wait for explicit go-ahead before writing implementation code — scaffolding/docs
+  like this file are fine to add proactively.
+- **Never run `git commit` (or `git push`) in this repo.** The user handles all
+  commits themselves. Editing/creating files is fine; leave staging and committing to
+  the user.
