@@ -140,6 +140,33 @@ No `sequence` field is stored — the display position ("Correction 1", "Correct
 array's order already encodes it. Storing it separately would just duplicate
 information already implicit in list order.
 
+### Value objects: ID types — shared `AbstractUuidId` base
+
+`EarningId`, `EmployeeId`, `CorrectionId`, and `PayrollSpecialistId` all extend a
+shared `AbstractUuidId` base class (wrapping a `symfony/uid` `UuidV7`), rather than
+being four independent classes or sharing behavior via a trait.
+
+Deciding heuristic: is-a vs. has-a-capability. These four types genuinely *are* a
+kind of the same thing — a UUID-based domain identifier — not just unrelated
+classes that happen to share some code; that's a real "is-a" relationship, which is
+what inheritance is for. A trait would share the implementation but wouldn't
+establish a common type, and the duplication avoided here (constructor, `equals()`,
+`__toString()`, a `generate()` named constructor) is genuinely identical across all
+four, not superficially similar.
+
+- `AbstractUuidId` is `abstract` and holds the shared `equals()` / `__toString()` /
+  `generate()` (via late static binding, so `EarningId::generate()` returns an
+  `EarningId`, not the abstract base).
+- Each concrete class (`EarningId`, `EmployeeId`, `CorrectionId`,
+  `PayrollSpecialistId`) is `final`, extending only the abstract base — standard
+  practice for value objects, so no further subclassing can alter equality
+  semantics.
+
+Contrast with `RecordsDomainEventsTrait` (ADR-0002): that's a has-a-capability case
+(an aggregate root gaining the orthogonal ability to accumulate domain events), not
+an is-a relationship — which is why that one is a trait and this one is an
+abstract class.
+
 ### Value object: `Money` — via `moneyphp/money`
 
 Uses the `moneyphp/money` library (`Money\Money`, `Money\Currency`) rather than a
@@ -242,3 +269,11 @@ sync with the aggregate's actual state.
   outside this domain's core concern; reimplementing it risks subtly getting wrong
   exactly the kind of cent-precision cases the assignment's own example is built to
   test, for no benefit over a mature library.
+- **Four independent ID classes with no shared code** — rejected; the duplicated
+  constructor/`equals()`/`__toString()` would be genuinely identical across all
+  four, not superficially similar, which is exactly the case where sharing an
+  implementation is justified over keeping them fully independent.
+- **A shared trait instead of an abstract base class for the ID types** — rejected;
+  the four ID types have a genuine is-a relationship (all are UUID-based domain
+  identifiers), which inheritance expresses correctly, and a trait would share the
+  implementation without giving them a common type.
