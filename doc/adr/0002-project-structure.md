@@ -153,20 +153,19 @@ each folder); only add a new line below when a genuinely new folder/layer appear
 src/
 ├── Shared/
 │   └── Domain/
-│       └── ValueObject/        # shared kernel — see "src/Shared/" above
+│       ├── ValueObject/         # shared kernel — see "src/Shared/" above
+│       └── Clock/                # ditto — no Payroll-specific meaning
 └── Payroll/
     ├── Domain/
     │   ├── Event/
     │   ├── Exception/
     │   ├── ValueObject/
-    │   ├── Audit/
-    │   └── Clock/
+    │   └── Audit/
     ├── Application/
     │   ├── Command/
     │   └── Query/
     ├── Infrastructure/
-    │   ├── Persistence/
-    │   └── Clock/
+    │   └── Persistence/
     └── Ui/
         └── Cli/
 
