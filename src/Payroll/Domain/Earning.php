@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Alcor\Payroll\Domain;
 
+use Alcor\Payroll\Domain\Audit\AuditEntry;
+use Alcor\Payroll\Domain\Audit\AuditHistory;
 use Alcor\Payroll\Domain\Event\CorrectionAdded;
 use Alcor\Payroll\Domain\Event\EarningCalculated;
 use Alcor\Payroll\Domain\ValueObject\CorrectionId;
@@ -95,5 +97,26 @@ final class Earning
         }
 
         return $total;
+    }
+
+    public function auditHistory(): AuditHistory
+    {
+        $entries = [];
+
+        $entries[] = new AuditEntry(
+            'Calculated value' . ($this->isFrozen() ? ' (frozen)' : ''),
+            $this->calculatedValue,
+        );
+
+        foreach ($this->corrections as $index => $correction) {
+            $entries[] = new AuditEntry(
+                \sprintf('Correction %d — %s', $index + 1, $correction->comment),
+                $correction->amount,
+            );
+        }
+
+        $entries[] = new AuditEntry('Current value', $this->currentValue());
+
+        return new AuditHistory($entries);
     }
 }

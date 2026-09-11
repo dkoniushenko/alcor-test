@@ -114,6 +114,22 @@ final class EarningTest extends TestCase
         yield 'positive correction' => [Money::USD(10010)];
     }
 
+    public function testAuditHistoryBeforeAnyCorrection(): void
+    {
+        // Given
+        $earning = Earning::calculate(EmployeeId::generate(), Money::USD(100000), $this->clock);
+
+        // When
+        $history = $earning->auditHistory();
+
+        // Then
+        self::assertCount(2, $history->entries);
+        self::assertSame('Calculated value', $history->entries[0]->label);
+        self::assertTrue(Money::USD(100000)->equals($history->entries[0]->value));
+        self::assertSame('Current value', $history->entries[1]->label);
+        self::assertTrue(Money::USD(100000)->equals($history->entries[1]->value));
+    }
+
     public function testTheFullWorkedExampleFromTheAssignment(): void
     {
         $employeeId = EmployeeId::generate();
@@ -160,5 +176,36 @@ final class EarningTest extends TestCase
         // Step 8: Specialist adds a compensating correction, realizing step 7 was a mistake.
         $earning->addCorrection(Money::USD(20), 'Correcting mistake in adjustment #4', $specialist, $this->clock);
         self::assertTrue(Money::USD(110445)->equals($earning->currentValue()));
+
+        // Final audit history matches the assignment's "Expected final audit history" table.
+        $history = $earning->auditHistory();
+        self::assertCount(7, $history->entries);
+
+        self::assertSame('Calculated value (frozen)', $history->entries[0]->label);
+        self::assertTrue(Money::USD(105000)->equals($history->entries[0]->value));
+
+        self::assertSame(
+            'Correction 1 — Employee declined dental benefit; reversing deduction',
+            $history->entries[1]->label,
+        );
+        self::assertTrue(Money::USD(-4555)->equals($history->entries[1]->value));
+
+        self::assertSame(
+            'Correction 2 — Late correction: missed approved overtime bonus',
+            $history->entries[2]->label,
+        );
+        self::assertTrue(Money::USD(10010)->equals($history->entries[2]->value));
+
+        self::assertSame('Correction 3 — Minor rounding adjustment', $history->entries[3]->label);
+        self::assertTrue(Money::USD(-10)->equals($history->entries[3]->value));
+
+        self::assertSame('Correction 4 — Second minor rounding adjustment', $history->entries[4]->label);
+        self::assertTrue(Money::USD(-20)->equals($history->entries[4]->value));
+
+        self::assertSame('Correction 5 — Correcting mistake in adjustment #4', $history->entries[5]->label);
+        self::assertTrue(Money::USD(20)->equals($history->entries[5]->value));
+
+        self::assertSame('Current value', $history->entries[6]->label);
+        self::assertTrue(Money::USD(110445)->equals($history->entries[6]->value));
     }
 }
