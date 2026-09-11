@@ -43,8 +43,9 @@ class is generic value-object machinery any future module could equally need).
 
 Rules for what goes here, and the dependency direction:
 
-- `Shared/` follows the same internal layering as any other module (`Domain/` for
-  now; `Application/`/`Infrastructure/`/`Ui/` only if it ever genuinely needs them).
+- `Shared/` follows the same internal layering as any other module — `Domain/`, plus
+  `Application/` now that `EventDispatcherInterface` needs it (see "Domain events"
+  below); `Infrastructure/`/`Ui/` only if it ever genuinely needs them.
 - Other modules may depend on `Shared/` (e.g. `Payroll\Domain\ValueObject\EarningId
   extends Shared\Domain\ValueObject\AbstractUuidId`), but `Shared/` must never depend
   back on `Payroll/` or any other module — that direction would quietly recreate a
@@ -82,16 +83,19 @@ Payroll/
 Dependency direction is one-way, inward, toward `Domain/`:
 
 - `Domain/` depends on nothing else in the project and on no framework — it defines
-  ports (`EarningRepositoryInterface`, `ClockInterface`, `EventDispatcherInterface`) as
-  interfaces, never concrete implementations. The one accepted exception is pure
-  value-type libraries with no infrastructure coupling of their own — `symfony/uid`
-  and `moneyphp/money` are used directly in `Domain/` (in `EarningId`/`CorrectionId`/
-  etc. and in `Money`-typed fields), not hidden behind a port. This is acceptable,
-  often unavoidable, dependency leakage: unlike a database client, HTTP client, or
-  ORM (infrastructure concerns, which *do* require a port), a UUID or money-arithmetic
+  ports (`EarningRepositoryInterface`, `ClockInterface`) as interfaces, never
+  concrete implementations. The one accepted exception is pure value-type libraries
+  with no infrastructure coupling of their own — `symfony/uid` and `moneyphp/money`
+  are used directly in `Domain/` (in `EarningId`/`CorrectionId`/etc. and in
+  `Money`-typed fields), not hidden behind a port. This is acceptable, often
+  unavoidable, dependency leakage: unlike a database client, HTTP client, or ORM
+  (infrastructure concerns, which *do* require a port), a UUID or money-arithmetic
   library is itself just a value type with no side effects or environment coupling —
   functionally no different from depending on PHP's own `DateTimeImmutable`.
-- `Application/` depends only on `Domain/`.
+- `Application/` depends only on `Domain/`, and may define its own ports too, not
+  just consume `Domain/`'s — `EventDispatcherInterface` is one (see "Domain events"
+  below): a capability only Application-layer orchestration needs, not the
+  aggregate itself.
 - `Infrastructure/` implements `Domain/`'s ports; it may depend on `Domain/` and
   external libraries, never the reverse.
 - `Ui/` depends on `Application/` (dispatches commands/queries) and is the thinnest
@@ -113,11 +117,25 @@ reconsidered if it proves like overkill once implementation starts.
 
 ### Domain events
 
-`Domain/Event/` holds `EarningCalculated` and `CorrectionAdded` (raised by `Earning`
-when `recalculate()` actually applies and when `addCorrection()` succeeds,
-respectively), a `RecordsDomainEventsTrait` giving the aggregate a shared
-mechanism to accumulate them, and an `EventDispatcherInterface` port. Only the
-interface is decided now — no implementation or consumer exists yet; what (if
+Split the same way as the other shared-vs-module concerns above, but across two
+layers, not just two modules: `Shared/Domain/Event/` holds `AbstractDomainEvent`
+(just an `occurredAt` timestamp, common to every event) and
+`RecordsDomainEventsTrait` (lets an aggregate accumulate events, then
+`pullDomainEvents()` them) — both genuinely used by Domain code (the aggregate
+itself). `EventDispatcherInterface` (the dispatch port) lives in
+`Shared/Application/Event/` instead: the aggregate never calls `dispatch()`, only
+`record()` — dispatching the pulled events is an Application-layer concern (a
+command handler's job after persisting), unlike `EarningRepositoryInterface`, which
+stays a Domain port because a repository is conventionally part of the aggregate's
+own persistence lifecycle (the canonical DDD placement), not just "something only
+Application happens to call". `Payroll/Domain/Event/` holds the actual business
+facts —
+`EarningCalculated` and `CorrectionAdded` (raised by `Earning` when `recalculate()`
+actually applies and when `addCorrection()` succeeds, respectively) — each a flat,
+self-contained set of scalar/value-object fields rather than embedding the
+`Earning`/`Correction` entities themselves, so an event stays a stable, independent
+fact even if the entity's own shape changes later. Only `EventDispatcherInterface`'s
+signature is decided so far — no implementation or consumer exists yet; what (if
 anything) needs to react to these events is deferred to implementation time.
 
 ### Naming conventions
@@ -156,10 +174,13 @@ each folder); only add a new line below when a genuinely new folder/layer appear
 ```
 src/
 ├── Shared/
-│   └── Domain/
-│       ├── ValueObject/         # shared kernel — see "src/Shared/" above
-│       ├── Clock/                # ditto — no Payroll-specific meaning
-│       └── Exception/            # AbstractDomainException — base for all domain exceptions
+│   ├── Domain/
+│   │   ├── ValueObject/          # shared kernel — see "src/Shared/" above
+│   │   ├── Clock/                 # ditto — no Payroll-specific meaning
+│   │   ├── Exception/             # AbstractDomainException — base for all domain exceptions
+│   │   └── Event/                 # AbstractDomainEvent, RecordsDomainEventsTrait
+│   └── Application/
+│       └── Event/                 # EventDispatcherInterface — an Application, not Domain, port
 └── Payroll/
     ├── Domain/
     │   ├── Event/
@@ -177,7 +198,9 @@ src/
 tests/
 ├── Unit/
 │   ├── Shared/
-│   │   └── Domain/ValueObject/
+│   │   └── Domain/
+│   │       ├── ValueObject/
+│   │       └── Event/
 │   └── Payroll/
 │       ├── Domain/
 │       └── Application/
