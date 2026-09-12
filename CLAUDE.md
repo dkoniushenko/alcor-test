@@ -4,8 +4,9 @@ Take-home coding test for a job application at Alcor OS (an all-in-one platform 
 managing contractors for product companies). Assignment source: `doc/Alcor code
 assignment.docx.pdf`.
 
-**Implementation has not started yet.** Only Docker scaffolding exists so far. Do not
-begin implementing until explicitly asked.
+**Implementation is complete.** The domain model, application layer, CLI demo, full
+PHPUnit suite, and PHPStan/Deptrac/PHP-CS-Fixer tooling are all in place and green —
+see the README for how to run them and the ADRs below for the design.
 
 Architectural/design decisions are recorded as ADRs in **`doc/adr/`**:
 
@@ -110,14 +111,24 @@ Recommended time budget: 2–6 hours.
 
 ## Current project state / environment
 
-- No `composer.json` yet — `src/` is empty.
-- `Dockerfile`: `php:8.4-cli` base image with `xdebug` and `composer` (v2, copied from
-  the official composer image) installed.
+- `composer.json`: PHP 8.4, `symfony/uid` and `moneyphp/money` as runtime deps;
+  `phpunit/phpunit` and `bamarni/composer-bin-plugin` as dev deps — the latter isolates
+  `phpstan`, `deptrac`, and `php-cs-fixer` under their own `tools/*/composer.json`
+  namespaces so their dependencies can't version-conflict with the main project.
+- `src/Payroll/` and `src/Shared/` hold the full implementation (domain model,
+  application layer, in-memory infrastructure, CLI) described in the ADRs below.
+- `tests/Unit/`, `tests/Integration/`, `tests/Fixtures/` hold the PHPUnit suite.
+- `bin/demo` runs the assignment's full 8-step worked example end to end.
+- `Dockerfile`: `php:8.4-cli` base image with `xdebug`, `ext-intl` (for
+  locale-aware money formatting), and `composer` (v2, copied from the official
+  composer image) installed.
 - `docker-compose.yml`: single `php` service, bind-mounts the repo to `/app`, runs
   `tail -f /dev/null` (exec into it to run commands), Xdebug configured to connect back
   to the host IDE (`host.docker.internal:9003`, idekey `PHPSTORM`).
-- `.gitignore` currently only excludes `.idea`.
-- `doc/` holds the original assignment PDF (not meant to be treated as source code).
+- `.gitignore` excludes `.idea`, `vendor/`, `tools/*/vendor/`, and the
+  phpunit/php-cs-fixer/deptrac cache files.
+- `doc/` holds the original assignment PDF (not meant to be treated as source code)
+  and `doc/adr/` for the ADRs.
 
 ## Working agreement
 

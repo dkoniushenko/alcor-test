@@ -108,9 +108,12 @@ Earning (aggregate root)
 
 1. `corrections` only grows — no method exists to edit or remove an entry.
 2. A correction's `comment` is always non-empty.
-3. Freezing is monotonic and permanent — once true, `isFrozen()` can never become
+3. A correction's `amount` is never zero — the assignment describes a correction as a
+   "positive or negative" amount, zero is neither, and a zero-amount correction
+   wouldn't correct anything.
+4. Freezing is monotonic and permanent — once true, `isFrozen()` can never become
    false again.
-4. `recalculate()` after freezing never throws and never changes state — it's a no-op,
+5. `recalculate()` after freezing never throws and never changes state — it's a no-op,
    not an error, because a source-data change after freezing is normal system
    behavior, not a bug.
 
@@ -129,7 +132,7 @@ the candidate value is.
 ```
 Correction (entity — immutable, has its own identity)
   id: CorrectionId                     (UUID v7)
-  amount: Money
+  amount: Money                         (never zero)
   comment: string                       (mandatory, non-empty)
   correctedBy: PayrollSpecialistId      (UUID v7)
   recordedAt: DateTimeImmutable
