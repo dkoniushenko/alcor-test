@@ -40,8 +40,6 @@ final class RunDemoCommand
         $employeeId = EmployeeId::generate();
         $specialist = PayrollSpecialistId::generate();
 
-        // TODO: add numbers for calculations
-
         echo "1. System calculates the line.\n";
         $earningId = $this->calculateEarningHandler->handle(
             new CalculateEarning($employeeId, Money::USD(100000)),

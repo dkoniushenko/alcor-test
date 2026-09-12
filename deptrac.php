@@ -42,5 +42,6 @@ return static function (DeptracConfig $config): void {
             Ruleset::forLayer($sharedApplication)->accesses($sharedDomain),
             Ruleset::forLayer($sharedInfrastructure)->accesses($sharedDomain),
         )
+        ->baseline(__DIR__ . '/deptrac.baseline.yaml')
     ;
 };

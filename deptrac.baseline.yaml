@@ -1,0 +1,9 @@
+# RunDemoCommand (Ui) generates EmployeeId/PayrollSpecialistId itself because this is a
+# self-contained CLI demo with no real Identity context to source them from — not a
+# pattern to replicate in a real Ui adapter, which would only ever parse an id it
+# received from outside, never mint one of its own.
+deptrac:
+  skip_violations:
+    Alcor\Payroll\Ui\Cli\RunDemoCommand:
+      - Alcor\Payroll\Domain\ValueObject\EmployeeId
+      - Alcor\Payroll\Domain\ValueObject\PayrollSpecialistId
