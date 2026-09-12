@@ -144,9 +144,8 @@ facts —
 actually applies and when `addCorrection()` succeeds, respectively) — each a flat,
 self-contained set of scalar/value-object fields rather than embedding the
 `Earning`/`Correction` entities themselves, so an event stays a stable, independent
-fact even if the entity's own shape changes later. Only `EventDispatcherInterface`'s
-signature is decided so far — no implementation or consumer exists yet; what (if
-anything) needs to react to these events is deferred to implementation time.
+fact even if the entity's own shape changes later. `EventDispatcherInterface` now has
+a concrete implementation and a consumer.
 
 ### Naming conventions
 
@@ -204,7 +203,8 @@ src/
 │   ├── Application/
 │   │   └── Event/                 # EventDispatcherInterface — an Application, not Domain, port
 │   └── Infrastructure/
-│       └── Clock/                 # SystemClock — implements Domain\Clock\ClockInterface
+│       ├── Clock/                 # SystemClock — implements Domain\Clock\ClockInterface
+│       └── Event/                 # ConsoleEventDispatcher — implements Application\Event\EventDispatcherInterface
 └── Payroll/
     ├── Domain/
     │   ├── Event/
@@ -264,10 +264,7 @@ tests/
   class per aggregate. Accepted to explicitly demonstrate the command/handler
   pattern; may be simplified later if it proves like ceremony without benefit once
   real use cases are implemented.
-- `EventDispatcherInterface` currently has no implementation or consumer — a
-  deliberate placeholder. If nothing ever ends up needing to react to
-  `EarningCalculated`/`CorrectionAdded`, the interface (and possibly the events
-  themselves) should be removed rather than left unused.
+- `EventDispatcherInterface` now has an implementation and a consumer.
 
 ### Alternatives considered and rejected
 

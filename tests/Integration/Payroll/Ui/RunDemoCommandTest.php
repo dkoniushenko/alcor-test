@@ -11,6 +11,7 @@ use Alcor\Payroll\Application\QueryHandler\GetAuditHistoryHandler;
 use Alcor\Payroll\Infrastructure\Persistence\InMemoryEarningRepository;
 use Alcor\Payroll\Ui\Cli\RunDemoCommand;
 use Alcor\Shared\Infrastructure\Clock\SystemClock;
+use Alcor\Shared\Infrastructure\Event\ConsoleEventDispatcher;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -25,10 +26,11 @@ final class RunDemoCommandTest extends TestCase
         // Given
         $repository = new InMemoryEarningRepository();
         $clock = new SystemClock();
+        $eventDispatcher = new ConsoleEventDispatcher();
         $command = new RunDemoCommand(
-            new CalculateEarningHandler($repository, $clock),
-            new RecalculateEarningHandler($repository, $clock),
-            new AddCorrectionHandler($repository, $clock),
+            new CalculateEarningHandler($repository, $clock, $eventDispatcher),
+            new RecalculateEarningHandler($repository, $clock, $eventDispatcher),
+            new AddCorrectionHandler($repository, $clock, $eventDispatcher),
             new GetAuditHistoryHandler($repository),
         );
 
@@ -39,6 +41,8 @@ final class RunDemoCommandTest extends TestCase
         \assert(\is_string($output));
 
         // Then
+        self::assertStringContainsString('[event] EarningCalculated occurred at', $output);
+        self::assertStringContainsString('[event] CorrectionAdded occurred at', $output);
         self::assertStringContainsString('Calculated value (frozen)', $output);
         self::assertStringContainsString('$1,050.00', $output);
         self::assertStringContainsString('-$45.55', $output);

@@ -8,7 +8,9 @@ use Alcor\Payroll\Application\Command\CalculateEarning;
 use Alcor\Payroll\Application\CommandHandler\CalculateEarningHandler;
 use Alcor\Payroll\Domain\Earning;
 use Alcor\Payroll\Domain\EarningRepositoryInterface;
+use Alcor\Payroll\Domain\Event\EarningCalculated;
 use Alcor\Payroll\Domain\ValueObject\EmployeeId;
+use Alcor\Shared\Application\Event\EventDispatcherInterface;
 use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
@@ -29,14 +31,22 @@ final class CalculateEarningHandlerTest extends TestCase
 
         $savedEarning = null;
         $repository = $this->createMock(EarningRepositoryInterface::class);
-        $repository->expects(self::once())
+        $repository
+            ->expects(self::once())
             ->method('save')
             ->willReturnCallback(static function (Earning $earning) use (&$savedEarning): void {
                 $savedEarning = $earning;
             })
         ;
 
-        $handler = new CalculateEarningHandler($repository, $clock);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher
+            ->expects(self::once())
+            ->method('dispatch')
+            ->with(self::isInstanceOf(EarningCalculated::class))
+        ;
+
+        $handler = new CalculateEarningHandler($repository, $clock, $eventDispatcher);
 
         // When
         $earningId = $handler->handle($command);

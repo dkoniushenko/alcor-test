@@ -40,7 +40,7 @@ return static function (DeptracConfig $config): void {
             Ruleset::forLayer($payrollUi)->accesses($payrollApplication, $sharedApplication),
             Ruleset::forLayer($sharedDomain),
             Ruleset::forLayer($sharedApplication)->accesses($sharedDomain),
-            Ruleset::forLayer($sharedInfrastructure)->accesses($sharedDomain),
+            Ruleset::forLayer($sharedInfrastructure)->accesses($sharedDomain, $sharedApplication),
         )
         ->baseline(__DIR__ . '/deptrac.baseline.yaml')
     ;

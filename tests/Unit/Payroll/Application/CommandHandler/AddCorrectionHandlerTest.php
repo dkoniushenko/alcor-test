@@ -9,9 +9,11 @@ use Alcor\Payroll\Application\CommandHandler\AddCorrectionHandler;
 use Alcor\Payroll\Application\Exception\EarningNotFoundException;
 use Alcor\Payroll\Domain\Earning;
 use Alcor\Payroll\Domain\EarningRepositoryInterface;
+use Alcor\Payroll\Domain\Event\CorrectionAdded;
 use Alcor\Payroll\Domain\ValueObject\EarningId;
 use Alcor\Payroll\Domain\ValueObject\EmployeeId;
 use Alcor\Payroll\Domain\ValueObject\PayrollSpecialistId;
+use Alcor\Shared\Application\Event\EventDispatcherInterface;
 use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +30,7 @@ final class AddCorrectionHandlerTest extends TestCase
         // Given
         $clock = new FixedClock(new \DateTimeImmutable('2026-01-01T00:00:00+00:00'));
         $earning = Earning::calculate(EmployeeId::generate(), Money::USD(100000), $clock);
+        $earning->pullDomainEvents();
         $command = new AddCorrection(
             $earning->id,
             Money::USD(-4555),
@@ -39,7 +42,14 @@ final class AddCorrectionHandlerTest extends TestCase
         $repository->expects(self::once())->method('find')->with($earning->id)->willReturn($earning);
         $repository->expects(self::once())->method('save')->with($earning);
 
-        $handler = new AddCorrectionHandler($repository, $clock);
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher
+            ->expects(self::once())
+            ->method('dispatch')
+            ->with(self::isInstanceOf(CorrectionAdded::class))
+        ;
+
+        $handler = new AddCorrectionHandler($repository, $clock, $eventDispatcher);
 
         // When
         $handler->handle($command);
@@ -59,11 +69,14 @@ final class AddCorrectionHandlerTest extends TestCase
         $repository->method('find')->willReturn(null);
         $repository->expects(self::never())->method('save');
 
+        $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+        $eventDispatcher->expects(self::never())->method('dispatch');
+
         // Expects
         $this->expectException(EarningNotFoundException::class);
 
         // When
-        new AddCorrectionHandler($repository, $clock)->handle(new AddCorrection(
+        new AddCorrectionHandler($repository, $clock, $eventDispatcher)->handle(new AddCorrection(
             $earningId,
             Money::USD(-4555),
             'Employee declined dental benefit',

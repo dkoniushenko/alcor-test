@@ -7,6 +7,7 @@ namespace Alcor\Payroll\Application\CommandHandler;
 use Alcor\Payroll\Application\Command\AddCorrection;
 use Alcor\Payroll\Application\Exception\EarningNotFoundException;
 use Alcor\Payroll\Domain\EarningRepositoryInterface;
+use Alcor\Shared\Application\Event\EventDispatcherInterface;
 use Alcor\Shared\Domain\Clock\ClockInterface;
 
 final readonly class AddCorrectionHandler
@@ -14,6 +15,7 @@ final readonly class AddCorrectionHandler
     public function __construct(
         private EarningRepositoryInterface $repository,
         private ClockInterface $clock,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function handle(AddCorrection $command): void
@@ -24,5 +26,9 @@ final readonly class AddCorrectionHandler
         $earning->addCorrection($command->amount, $command->comment, $command->correctedBy, $this->clock);
 
         $this->repository->save($earning);
+
+        foreach ($earning->pullDomainEvents() as $event) {
+            $this->eventDispatcher->dispatch($event);
+        }
     }
 }

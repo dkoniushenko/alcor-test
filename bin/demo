@@ -12,14 +12,16 @@ use Alcor\Payroll\Application\QueryHandler\GetAuditHistoryHandler;
 use Alcor\Payroll\Infrastructure\Persistence\InMemoryEarningRepository;
 use Alcor\Payroll\Ui\Cli\RunDemoCommand;
 use Alcor\Shared\Infrastructure\Clock\SystemClock;
+use Alcor\Shared\Infrastructure\Event\ConsoleEventDispatcher;
 
 $repository = new InMemoryEarningRepository();
 $clock = new SystemClock();
+$eventDispatcher = new ConsoleEventDispatcher();
 
 $command = new RunDemoCommand(
-    new CalculateEarningHandler($repository, $clock),
-    new RecalculateEarningHandler($repository, $clock),
-    new AddCorrectionHandler($repository, $clock),
+    new CalculateEarningHandler($repository, $clock, $eventDispatcher),
+    new RecalculateEarningHandler($repository, $clock, $eventDispatcher),
+    new AddCorrectionHandler($repository, $clock, $eventDispatcher),
     new GetAuditHistoryHandler($repository),
 );
 

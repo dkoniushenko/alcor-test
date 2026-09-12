@@ -132,9 +132,9 @@ All four layers are implemented and tested, end to end: the domain model (`Earni
 (`bin/demo`) that wires all of it together and runs the assignment's full 8-step
 scenario in one process — see "Running it" below.
 
-Domain events are recorded on the aggregate but not yet dispatched anywhere —
-`EventDispatcherInterface` has no implementation or consumer yet, deliberately
-deferred until something actually needs to react to them.
+Domain events are recorded on the aggregate and dispatched by each command handler
+after `save()`, via a minimal `ConsoleEventDispatcher` that prints one line per
+dispatched event.
 
 ## Development tooling
 
@@ -185,13 +185,20 @@ Expected output:
 
 ```
 1. System calculates the line.
+[event] EarningCalculated occurred at <timestamp>
 2. Source data changes, system recalculates (no correction yet, allowed).
+[event] EarningCalculated occurred at <timestamp>
 3. Specialist adds a manual correction.
+[event] CorrectionAdded occurred at <timestamp>
 4. Source data changes again, system attempts to recalculate — ignored (already frozen).
 5. Specialist adds a second correction.
+[event] CorrectionAdded occurred at <timestamp>
 6. Specialist adds a third correction.
+[event] CorrectionAdded occurred at <timestamp>
 7. Specialist adds a fourth correction.
+[event] CorrectionAdded occurred at <timestamp>
 8. Specialist adds a compensating correction, realizing step 7 was a mistake.
+[event] CorrectionAdded occurred at <timestamp>
 
 Final audit history:
   Calculated value (frozen)                                               $1,050.00
@@ -203,6 +210,9 @@ Final audit history:
   Current value                                                           $1,104.45
 ```
 
-(Each run generates fresh `EmployeeId`/`PayrollSpecialistId` UUIDs, so only the
-labels and dollar amounts above are stable between runs — matching the assignment's
-own expected numbers exactly.)
+(Each run generates fresh `EmployeeId`/`PayrollSpecialistId` UUIDs and real
+timestamps, so only the labels and dollar amounts above are stable between runs —
+matching the assignment's own expected numbers exactly. Step 4 has no `[event]` line:
+the recalculation is ignored because the line is already frozen, so `Earning` never
+records an event for it — the absence of that line is itself observable proof the
+freeze rule held.)
