@@ -23,9 +23,6 @@ abstract readonly class AbstractUuidId implements \Stringable
         return new static(UuidV7::fromString($value));
     }
 
-    // Parameter is `self`, not `static` (PHP disallows `static` in parameter
-    // position) — the extra `static::class` check below is what actually stops an
-    // EarningId from comparing equal to a CorrectionId sharing the same UUID.
     public function equals(self $other): bool
     {
         return static::class === $other::class && $this->value->equals($other->value);

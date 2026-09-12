@@ -97,24 +97,23 @@ clock port, domain-event plumbing).
 
 ```
 src/
-├── Shared/                     cross-module kernel — see ADR-0002
-│   ├── Domain/                  implemented
-│   ├── Application/              implemented
-│   └── Infrastructure/            implemented — SystemClock
+├── Shared/
+│   ├── Domain/
+│   ├── Application/
+│   └── Infrastructure/
 └── Payroll/
-    ├── Domain/                  implemented — Earning, Correction, audit history, events
+    ├── Domain/
     ├── Application/
-    │   ├── Command/ + CommandHandler/   implemented — CalculateEarning, RecalculateEarning, AddCorrection
-    │   ├── Query/ + QueryHandler/         implemented — GetAuditHistory
-    │   └── Exception/                      implemented — EarningNotFoundException
+    │   ├── Command/
+    │   ├── CommandHandler/
+    │   ├── Query/
+    │   ├── QueryHandler/
+    │   └── Exception/
     ├── Infrastructure/
-    │   └── Persistence/           implemented — InMemoryEarningRepository
+    │   └── Persistence/
     └── Ui/
-        └── Cli/                   planned, not yet implemented
+        └── Cli/
 ```
-
-`Ui/Cli/` still exists only as an empty `.gitkeep` placeholder — see "Current status"
-below.
 
 Full reasoning, alternatives considered, and the folder/namespace skeleton are in:
 
@@ -125,19 +124,17 @@ Full reasoning, alternatives considered, and the folder/namespace skeleton are i
 
 ## Current status
 
-The domain model (`Earning`, `Correction`, value objects, domain events, audit
-history) is implemented and tested against the assignment's worked example.
+All four layers are implemented and tested, end to end: the domain model (`Earning`,
+`Correction`, value objects, domain events, audit history), the Application layer
+(`CalculateEarning`, `RecalculateEarning`, `AddCorrection` commands +
+`GetAuditHistory` query, each with a handler), the in-memory
+`EarningRepositoryInterface`/`ClockInterface` implementations, and a CLI entry point
+(`bin/demo`) that wires all of it together and runs the assignment's full 8-step
+scenario in one process — see "Running it" below.
 
-The Application layer (`CalculateEarning`, `RecalculateEarning`, `AddCorrection`
-commands + `GetAuditHistory` query, each with a handler) and an in-memory
-`EarningRepositoryInterface` implementation are also implemented and tested. Domain
-events are recorded on the aggregate but not yet dispatched anywhere —
+Domain events are recorded on the aggregate but not yet dispatched anywhere —
 `EventDispatcherInterface` has no implementation or consumer yet, deliberately
 deferred until something actually needs to react to them.
-
-Not implemented yet: a CLI entry point (`Ui/Cli/` still exists only as an empty
-`.gitkeep` placeholder) to wire everything together — `SystemClock`, the repository,
-and the command/query handlers — and actually run it end-to-end.
 
 ## Running it
 
@@ -148,3 +145,46 @@ docker compose up -d
 docker compose exec php composer install
 docker compose exec php vendor/bin/phpunit
 ```
+
+### Running the demo
+
+```bash
+docker compose exec php php bin/demo
+```
+
+`bin/demo` runs `RunDemoCommand`, which drives the assignment's full 8-step
+scenario through those handlers exactly as a real caller would — no test doubles
+anywhere in this path.
+
+It's a single self-contained run rather than separate `bin/demo <sub-command>`
+invocations, because storage is in-memory: each `php bin/demo ...` call starts a
+fresh process with an empty repository, so a later invocation could never find an
+`Earning` a previous invocation created. Running the whole scenario in one process is
+what makes the freeze behaviour (step 4) and the corrected mistake (steps 7–8)
+observable at all.
+
+Expected output:
+
+```
+1. System calculates the line.
+2. Source data changes, system recalculates (no correction yet, allowed).
+3. Specialist adds a manual correction.
+4. Source data changes again, system attempts to recalculate — ignored (already frozen).
+5. Specialist adds a second correction.
+6. Specialist adds a third correction.
+7. Specialist adds a fourth correction.
+8. Specialist adds a compensating correction, realizing step 7 was a mistake.
+
+Final audit history:
+  Calculated value (frozen)                                               $1,050.00
+  Correction 1 — Employee declined dental benefit; reversing deduction      -$45.55
+  Correction 2 — Late correction: missed approved overtime bonus          $100.10
+  Correction 3 — Minor rounding adjustment                                 -$0.10
+  Correction 4 — Second minor rounding adjustment                          -$0.20
+  Correction 5 — Correcting mistake in adjustment #4                        $0.20
+  Current value                                                           $1,104.45
+```
+
+(Each run generates fresh `EmployeeId`/`PayrollSpecialistId` UUIDs, so only the
+labels and dollar amounts above are stable between runs — matching the assignment's
+own expected numbers exactly.)

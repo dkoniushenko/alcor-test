@@ -8,6 +8,12 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# ext-intl, for locale-aware Money formatting (Money\Formatter\IntlMoneyFormatter)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libicu-dev \
+    && docker-php-ext-install intl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Composer, pinned to major version 2, copied from the official image
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

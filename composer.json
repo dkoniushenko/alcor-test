@@ -9,6 +9,7 @@
     ],
     "require": {
         "php": "^8.4",
+        "ext-intl": "*",
         "symfony/uid": "^8.1",
         "moneyphp/money": "^3.3"
     },

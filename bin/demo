@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+require __DIR__ . '/../vendor/autoload.php';
+
+use Alcor\Payroll\Application\CommandHandler\AddCorrectionHandler;
+use Alcor\Payroll\Application\CommandHandler\CalculateEarningHandler;
+use Alcor\Payroll\Application\CommandHandler\RecalculateEarningHandler;
+use Alcor\Payroll\Application\QueryHandler\GetAuditHistoryHandler;
+use Alcor\Payroll\Infrastructure\Persistence\InMemoryEarningRepository;
+use Alcor\Payroll\Ui\Cli\RunDemoCommand;
+use Alcor\Shared\Infrastructure\Clock\SystemClock;
+
+$repository = new InMemoryEarningRepository();
+$clock = new SystemClock();
+
+$command = new RunDemoCommand(
+    new CalculateEarningHandler($repository, $clock),
+    new RecalculateEarningHandler($repository, $clock),
+    new AddCorrectionHandler($repository, $clock),
+    new GetAuditHistoryHandler($repository),
+);
+
+$command->run();

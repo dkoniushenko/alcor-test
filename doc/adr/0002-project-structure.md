@@ -103,7 +103,7 @@ Dependency direction is one-way, inward, toward `Domain/`:
   layer — parses input, calls a handler, formats output. No business logic here.
 
 Concrete implementations are wired to their ports only at the composition root
-(`bin/console`), which is the only place allowed to know about both a port and its
+(`bin/demo`), which is the only place allowed to know about both a port and its
 concrete implementation at once.
 
 ### Application layer: Command + Handler
@@ -180,11 +180,12 @@ the class under test lives in: `Infrastructure/` isn't automatically `Integratio
 `InMemoryEarningRepository` lives in `Infrastructure/` but has no real I/O — it's a
 plain array — so its test is fast and dependency-free, and belongs in
 `tests/Unit/Payroll/Infrastructure/`, not `Integration/`. `Integration/` is reserved
-for tests that actually cross a real boundary — e.g. the eventual `Ui/`
-`ConsoleApplicationTest.php`, which will exercise the full wired-up application
-through `bin/console`. If a genuinely I/O-bound Infrastructure adapter (a real
-database-backed repository, say) is ever added, *that* implementation's test would
-belong in `Integration/`.
+for tests that actually cross a real boundary — e.g.
+`Ui/RunDemoCommandTest.php`, which wires the real `SystemClock`,
+`InMemoryEarningRepository`, and all four handlers together (no mocks) and runs
+`RunDemoCommand` exactly as `bin/demo` does. If a genuinely I/O-bound
+Infrastructure adapter (a real database-backed repository, say) is ever added, *that*
+implementation's test would belong in `Integration/` too.
 
 ### Namespace / folder skeleton
 
@@ -233,7 +234,7 @@ tests/
 │       └── Infrastructure/       # e.g. InMemoryEarningRepository — no real I/O
 ├── Integration/
 │   └── Payroll/
-│       └── Ui/                    # e.g. the eventual ConsoleApplicationTest
+│       └── Ui/                    # RunDemoCommandTest — real wiring, no mocks
 └── Fixtures/
 ```
 
