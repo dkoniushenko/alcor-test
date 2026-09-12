@@ -15,8 +15,7 @@ final readonly class CalculateEarningHandler
     public function __construct(
         private EarningRepositoryInterface $repository,
         private ClockInterface $clock,
-    ) {
-    }
+    ) {}
 
     public function handle(CalculateEarning $command): EarningId
     {

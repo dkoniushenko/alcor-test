@@ -4,6 +4,4 @@ declare(strict_types=1);
 
 namespace Alcor\Shared\Domain\Exception;
 
-abstract class AbstractDomainException extends \DomainException
-{
-}
+abstract class AbstractDomainException extends \DomainException {}

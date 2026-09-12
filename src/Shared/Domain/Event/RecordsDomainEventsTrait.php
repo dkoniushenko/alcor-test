@@ -9,11 +9,6 @@ trait RecordsDomainEventsTrait
     /** @var list<AbstractDomainEvent> */
     private array $domainEvents = [];
 
-    protected function record(AbstractDomainEvent $event): void
-    {
-        $this->domainEvents[] = $event;
-    }
-
     /** @return list<AbstractDomainEvent> */
     public function pullDomainEvents(): array
     {
@@ -21,5 +16,10 @@ trait RecordsDomainEventsTrait
         $this->domainEvents = [];
 
         return $events;
+    }
+
+    protected function record(AbstractDomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
     }
 }

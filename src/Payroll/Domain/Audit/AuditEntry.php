@@ -11,6 +11,5 @@ final readonly class AuditEntry
     public function __construct(
         public string $label,
         public Money $value,
-    ) {
-    }
+    ) {}
 }

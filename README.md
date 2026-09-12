@@ -136,6 +136,24 @@ Domain events are recorded on the aggregate but not yet dispatched anywhere —
 `EventDispatcherInterface` has no implementation or consumer yet, deliberately
 deferred until something actually needs to react to them.
 
+## Development tooling
+
+Static analysis, code style, and architecture-boundary checks live in their own
+isolated Composer namespaces under `tools/` (via
+[`bamarni/composer-bin-plugin`](https://github.com/bamarni/composer-bin-plugin)), so
+their dependencies (e.g. `friendsofphp/php-cs-fixer`'s `symfony/*` packages) can never
+version-conflict with the main project's own dependencies. `composer install` at the
+root installs everything, tools included (`forward-command` is enabled), and each
+tool's binary is symlinked into the usual `vendor/bin/`.
+
+| Command | Tool | Checks |
+|---|---|---|
+| `composer cs-check` | [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) | Code style, dry-run |
+| `composer cs-fix` | PHP-CS-Fixer | Code style, auto-fix |
+| `composer phpstan` | [PHPStan](https://phpstan.org/) (level 8) | Static types |
+| `composer deptrac` | [Deptrac](https://github.com/deptrac/deptrac) | Layer boundaries from [ADR-0002](doc/adr/0002-project-structure.md) |
+| `composer check` | all three | cs-check + phpstan + deptrac |
+
 ## Running it
 
 Everything runs inside Docker — the host doesn't need PHP or Composer installed.

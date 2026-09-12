@@ -8,6 +8,11 @@ use Alcor\Tests\Fixtures\DummyUuidIdA;
 use Alcor\Tests\Fixtures\DummyUuidIdB;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class AbstractUuidIdTest extends TestCase
 {
     public function testGenerateReturnsInstanceOfTheConcreteClass(): void

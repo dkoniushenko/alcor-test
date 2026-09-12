@@ -28,8 +28,7 @@ final class Earning
         public readonly EmployeeId $employeeId,
         private Money $calculatedValue,
         private \DateTimeImmutable $calculatedAt,
-    ) {
-    }
+    ) {}
 
     public static function calculate(EmployeeId $employeeId, Money $calculatedValue, ClockInterface $clock): self
     {
@@ -104,7 +103,7 @@ final class Earning
         $entries = [];
 
         $entries[] = new AuditEntry(
-            'Calculated value' . ($this->isFrozen() ? ' (frozen)' : ''),
+            'Calculated value'.($this->isFrozen() ? ' (frozen)' : ''),
             $this->calculatedValue,
         );
 

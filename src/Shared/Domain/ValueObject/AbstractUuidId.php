@@ -10,7 +10,11 @@ abstract readonly class AbstractUuidId implements \Stringable
 {
     private function __construct(
         private UuidV7 $value,
-    ) {
+    ) {}
+
+    public function __toString(): string
+    {
+        return (string) $this->value;
     }
 
     public static function generate(): static
@@ -26,10 +30,5 @@ abstract readonly class AbstractUuidId implements \Stringable
     public function equals(self $other): bool
     {
         return static::class === $other::class && $this->value->equals($other->value);
-    }
-
-    public function __toString(): string
-    {
-        return (string) $this->value;
     }
 }

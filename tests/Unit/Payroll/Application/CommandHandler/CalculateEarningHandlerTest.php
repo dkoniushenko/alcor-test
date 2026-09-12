@@ -13,6 +13,11 @@ use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class CalculateEarningHandlerTest extends TestCase
 {
     public function testHandleSavesNewEarningAndReturnsItsId(): void
@@ -24,11 +29,12 @@ final class CalculateEarningHandlerTest extends TestCase
 
         $savedEarning = null;
         $repository = $this->createMock(EarningRepositoryInterface::class);
-        $repository->expects($this->once())
+        $repository->expects(self::once())
             ->method('save')
-            ->willReturnCallback(function (Earning $earning) use (&$savedEarning): void {
+            ->willReturnCallback(static function (Earning $earning) use (&$savedEarning): void {
                 $savedEarning = $earning;
-            });
+            })
+        ;
 
         $handler = new CalculateEarningHandler($repository, $clock);
 

@@ -6,6 +6,4 @@ namespace Alcor\Tests\Fixtures;
 
 use Alcor\Shared\Domain\Event\AbstractDomainEvent;
 
-final readonly class DummyDomainEvent extends AbstractDomainEvent
-{
-}
+final readonly class DummyDomainEvent extends AbstractDomainEvent {}

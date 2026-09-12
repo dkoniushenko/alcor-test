@@ -1,3 +1,6 @@
 /.idea/
 /vendor/
+/tools/*/vendor/
 .phpunit.cache
+.php-cs-fixer.cache
+.deptrac.cache

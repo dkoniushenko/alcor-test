@@ -14,8 +14,7 @@ final readonly class AddCorrectionHandler
     public function __construct(
         private EarningRepositoryInterface $repository,
         private ClockInterface $clock,
-    ) {
-    }
+    ) {}
 
     public function handle(AddCorrection $command): void
     {

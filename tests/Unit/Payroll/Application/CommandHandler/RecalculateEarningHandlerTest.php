@@ -15,6 +15,11 @@ use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class RecalculateEarningHandlerTest extends TestCase
 {
     public function testHandleUpdatesExistingEarning(): void
@@ -25,8 +30,8 @@ final class RecalculateEarningHandlerTest extends TestCase
         $command = new RecalculateEarning($earning->id, Money::USD(105000));
 
         $repository = $this->createMock(EarningRepositoryInterface::class);
-        $repository->expects($this->once())->method('find')->with($earning->id)->willReturn($earning);
-        $repository->expects($this->once())->method('save')->with($earning);
+        $repository->expects(self::once())->method('find')->with($earning->id)->willReturn($earning);
+        $repository->expects(self::once())->method('save')->with($earning);
 
         $handler = new RecalculateEarningHandler($repository, $clock);
 
@@ -45,13 +50,14 @@ final class RecalculateEarningHandlerTest extends TestCase
 
         $repository = $this->createMock(EarningRepositoryInterface::class);
         $repository->method('find')->willReturn(null);
-        $repository->expects($this->never())->method('save');
+        $repository->expects(self::never())->method('save');
 
         // Expects
         $this->expectException(EarningNotFoundException::class);
 
         // When
-        (new RecalculateEarningHandler($repository, $clock))
-            ->handle(new RecalculateEarning($earningId, Money::USD(105000)));
+        new RecalculateEarningHandler($repository, $clock)
+            ->handle(new RecalculateEarning($earningId, Money::USD(105000)))
+        ;
     }
 }

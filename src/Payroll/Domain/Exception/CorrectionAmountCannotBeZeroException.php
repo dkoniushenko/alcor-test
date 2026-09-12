@@ -6,6 +6,4 @@ namespace Alcor\Payroll\Domain\Exception;
 
 use Alcor\Shared\Domain\Exception\AbstractDomainException;
 
-final class CorrectionAmountCannotBeZeroException extends AbstractDomainException
-{
-}
+final class CorrectionAmountCannotBeZeroException extends AbstractDomainException {}

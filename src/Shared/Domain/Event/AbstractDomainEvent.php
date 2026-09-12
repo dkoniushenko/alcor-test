@@ -8,6 +8,5 @@ abstract readonly class AbstractDomainEvent
 {
     public function __construct(
         public \DateTimeImmutable $occurredAt,
-    ) {
-    }
+    ) {}
 }

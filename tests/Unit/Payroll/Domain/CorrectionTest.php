@@ -13,9 +13,14 @@ use Money\Money;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class CorrectionTest extends TestCase
 {
-    #[DataProvider('positiveDataProvider')]
+    #[DataProvider('providePositiveCases')]
     public function testPositive(Money $amount): void
     {
         // Given
@@ -36,11 +41,12 @@ final class CorrectionTest extends TestCase
     }
 
     /** @return iterable<string, array{string}> */
-    public static function positiveDataProvider(): iterable
+    public static function providePositiveCases(): iterable
     {
         yield 'it supports positive amount' => [
             'amount' => Money::USD(100),
         ];
+
         yield 'it supports negative amount' => [
             'amount' => Money::USD(-233),
         ];
@@ -61,7 +67,7 @@ final class CorrectionTest extends TestCase
         );
     }
 
-    #[DataProvider('invalidCommentProvider')]
+    #[DataProvider('provideConstructingWithAnInvalidCommentIsRejectedCases')]
     public function testConstructingWithAnInvalidCommentIsRejected(string $comment): void
     {
         // Expects
@@ -78,12 +84,16 @@ final class CorrectionTest extends TestCase
     }
 
     /** @return iterable<string, array{string}> */
-    public static function invalidCommentProvider(): iterable
+    public static function provideConstructingWithAnInvalidCommentIsRejectedCases(): iterable
     {
         yield 'empty string' => [''];
+
         yield 'single space' => [' '];
+
         yield 'tab' => ["\t"];
+
         yield 'newline' => ["\n"];
+
         yield 'mixed whitespace' => ["  \t\n  "];
     }
 }

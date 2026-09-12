@@ -10,6 +10,5 @@ final readonly class GetAuditHistory
 {
     public function __construct(
         public EarningId $earningId,
-    ) {
-    }
+    ) {}
 }

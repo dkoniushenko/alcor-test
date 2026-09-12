@@ -12,6 +12,5 @@ final readonly class RecalculateEarning
     public function __construct(
         public EarningId $earningId,
         public Money $candidate,
-    ) {
-    }
+    ) {}
 }

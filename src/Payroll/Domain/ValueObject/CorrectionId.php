@@ -6,6 +6,4 @@ namespace Alcor\Payroll\Domain\ValueObject;
 
 use Alcor\Shared\Domain\ValueObject\AbstractUuidId;
 
-final readonly class CorrectionId extends AbstractUuidId
-{
-}
+final readonly class CorrectionId extends AbstractUuidId {}

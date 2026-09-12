@@ -9,6 +9,5 @@ final readonly class AuditHistory
     /** @param list<AuditEntry> $entries */
     public function __construct(
         public array $entries,
-    ) {
-    }
+    ) {}
 }

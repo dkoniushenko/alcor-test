@@ -18,7 +18,6 @@ use Money\Currencies\ISOCurrencies;
 use Money\Formatter\IntlMoneyFormatter;
 use Money\Money;
 use Money\MoneyFormatter;
-use NumberFormatter;
 
 final class RunDemoCommand
 {
@@ -31,7 +30,7 @@ final class RunDemoCommand
         private readonly GetAuditHistoryHandler $getAuditHistoryHandler,
     ) {
         $this->moneyFormatter = new IntlMoneyFormatter(
-            new NumberFormatter('en_US', NumberFormatter::CURRENCY),
+            new \NumberFormatter('en_US', \NumberFormatter::CURRENCY),
             new ISOCurrencies(),
         );
     }

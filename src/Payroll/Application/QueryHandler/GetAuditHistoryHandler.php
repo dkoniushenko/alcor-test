@@ -13,8 +13,7 @@ final readonly class GetAuditHistoryHandler
 {
     public function __construct(
         private EarningRepositoryInterface $repository,
-    ) {
-    }
+    ) {}
 
     public function handle(GetAuditHistory $query): AuditHistory
     {

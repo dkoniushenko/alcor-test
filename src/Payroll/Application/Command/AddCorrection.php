@@ -15,6 +15,5 @@ final readonly class AddCorrection
         public Money $amount,
         public string $comment,
         public PayrollSpecialistId $correctedBy,
-    ) {
-    }
+    ) {}
 }

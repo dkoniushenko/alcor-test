@@ -12,6 +12,11 @@ use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class InMemoryEarningRepositoryTest extends TestCase
 {
     public function testFindReturnsNullWhenNothingIsStored(): void

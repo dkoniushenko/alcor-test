@@ -14,6 +14,11 @@ use Money\Money;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class EarningTest extends TestCase
 {
     private FixedClock $clock;
@@ -23,7 +28,7 @@ final class EarningTest extends TestCase
         $this->clock = new FixedClock(new \DateTimeImmutable('2026-01-01T00:00:00+00:00'));
     }
 
-    #[DataProvider('calculatedValueProvider')]
+    #[DataProvider('provideCalculateCases')]
     public function testCalculate(Money $calculatedValue): void
     {
         // When
@@ -31,7 +36,7 @@ final class EarningTest extends TestCase
 
         // Then
         self::assertTrue($calculatedValue->equals($earning->currentValue()));
-        self::assertEquals($this->clock->now(), $earning->calculatedAt());
+        self::assertSame($this->clock->now(), $earning->calculatedAt());
 
         $events = $earning->pullDomainEvents();
         self::assertCount(1, $events);
@@ -41,10 +46,12 @@ final class EarningTest extends TestCase
     }
 
     /** @return iterable<string, array{Money}> */
-    public static function calculatedValueProvider(): iterable
+    public static function provideCalculateCases(): iterable
     {
         yield 'positive value' => [Money::USD(10000)];
+
         yield 'zero is allowed (unlike a Correction amount)' => [Money::USD(0)];
+
         yield 'negative value' => [Money::USD(-500)];
     }
 
@@ -59,7 +66,7 @@ final class EarningTest extends TestCase
 
         // Then
         self::assertTrue(Money::USD(20000)->equals($earning->currentValue()));
-        self::assertEquals($laterClock->now(), $earning->calculatedAt());
+        self::assertSame($laterClock->now(), $earning->calculatedAt());
     }
 
     public function testRecalculateWhenFrozen(): void
@@ -76,11 +83,11 @@ final class EarningTest extends TestCase
 
         // Then
         self::assertTrue(Money::USD(7000)->equals($earning->currentValue()));
-        self::assertEquals($calculatedAtBefore, $earning->calculatedAt());
+        self::assertSame($calculatedAtBefore, $earning->calculatedAt());
         self::assertSame([], $earning->pullDomainEvents());
     }
 
-    #[DataProvider('correctionAmountProvider')]
+    #[DataProvider('provideAddCorrectionCases')]
     public function testAddCorrection(Money $amount): void
     {
         // Given
@@ -108,9 +115,10 @@ final class EarningTest extends TestCase
     }
 
     /** @return iterable<string, array{Money}> */
-    public static function correctionAmountProvider(): iterable
+    public static function provideAddCorrectionCases(): iterable
     {
         yield 'negative correction' => [Money::USD(-4555)];
+
         yield 'positive correction' => [Money::USD(10010)];
     }
 

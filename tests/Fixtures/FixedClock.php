@@ -10,8 +10,7 @@ final readonly class FixedClock implements ClockInterface
 {
     public function __construct(
         private \DateTimeImmutable $now,
-    ) {
-    }
+    ) {}
 
     public function now(): \DateTimeImmutable
     {

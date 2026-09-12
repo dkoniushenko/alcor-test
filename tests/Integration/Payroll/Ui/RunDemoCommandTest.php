@@ -13,6 +13,11 @@ use Alcor\Payroll\Ui\Cli\RunDemoCommand;
 use Alcor\Shared\Infrastructure\Clock\SystemClock;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class RunDemoCommandTest extends TestCase
 {
     public function testRunPrintsTheFinalAuditHistoryMatchingTheAssignment(): void

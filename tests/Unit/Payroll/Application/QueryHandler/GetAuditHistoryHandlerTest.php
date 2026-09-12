@@ -15,6 +15,11 @@ use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class GetAuditHistoryHandlerTest extends TestCase
 {
     public function testHandleReturnsEarningsAuditHistory(): void
@@ -24,7 +29,7 @@ final class GetAuditHistoryHandlerTest extends TestCase
         $earning = Earning::calculate(EmployeeId::generate(), Money::USD(100000), $clock);
 
         $repository = $this->createMock(EarningRepositoryInterface::class);
-        $repository->expects($this->once())->method('find')->with($earning->id)->willReturn($earning);
+        $repository->expects(self::once())->method('find')->with($earning->id)->willReturn($earning);
 
         $handler = new GetAuditHistoryHandler($repository);
 
@@ -42,13 +47,13 @@ final class GetAuditHistoryHandlerTest extends TestCase
         // Given
         $earningId = EarningId::generate();
 
-        $repository = $this->createStub(EarningRepositoryInterface::class);
+        $repository = self::createStub(EarningRepositoryInterface::class);
         $repository->method('find')->willReturn(null);
 
         // Expects
         $this->expectException(EarningNotFoundException::class);
 
         // When
-        (new GetAuditHistoryHandler($repository))->handle(new GetAuditHistory($earningId));
+        new GetAuditHistoryHandler($repository)->handle(new GetAuditHistory($earningId));
     }
 }

@@ -16,6 +16,11 @@ use Alcor\Tests\Fixtures\FixedClock;
 use Money\Money;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class AddCorrectionHandlerTest extends TestCase
 {
     public function testHandleAddsCorrectionToExistingEarning(): void
@@ -31,8 +36,8 @@ final class AddCorrectionHandlerTest extends TestCase
         );
 
         $repository = $this->createMock(EarningRepositoryInterface::class);
-        $repository->expects($this->once())->method('find')->with($earning->id)->willReturn($earning);
-        $repository->expects($this->once())->method('save')->with($earning);
+        $repository->expects(self::once())->method('find')->with($earning->id)->willReturn($earning);
+        $repository->expects(self::once())->method('save')->with($earning);
 
         $handler = new AddCorrectionHandler($repository, $clock);
 
@@ -52,13 +57,13 @@ final class AddCorrectionHandlerTest extends TestCase
 
         $repository = $this->createMock(EarningRepositoryInterface::class);
         $repository->method('find')->willReturn(null);
-        $repository->expects($this->never())->method('save');
+        $repository->expects(self::never())->method('save');
 
         // Expects
         $this->expectException(EarningNotFoundException::class);
 
         // When
-        (new AddCorrectionHandler($repository, $clock))->handle(new AddCorrection(
+        new AddCorrectionHandler($repository, $clock)->handle(new AddCorrection(
             $earningId,
             Money::USD(-4555),
             'Employee declined dental benefit',

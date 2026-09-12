@@ -8,6 +8,11 @@ use Alcor\Tests\Fixtures\DummyDomainEvent;
 use Alcor\Tests\Fixtures\DummyEventRecordingAggregate;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * @internal
+ *
+ * @coversNothing
+ */
 final class RecordsDomainEventsTraitTest extends TestCase
 {
     public function testPullDomainEventsReturnsRecordedEventsInOrder(): void
