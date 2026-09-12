@@ -4,3 +4,11 @@ parameters:
         - src
         - tests
         - bin/demo
+
+    ignoreErrors:
+        -
+            # Named-constructor factories (generate()/fromString()) over a private
+            # constructor: no subclass can ever override __construct to make this unsafe,
+            # since it can't call parent::__construct() to begin with.
+            identifier: new.static
+            path: src/Shared/Domain/ValueObject/AbstractUuidId.php

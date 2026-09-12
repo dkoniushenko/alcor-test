@@ -36,6 +36,7 @@ final class RunDemoCommandTest extends TestCase
         ob_start();
         $command->run();
         $output = ob_get_clean();
+        \assert(\is_string($output));
 
         // Then
         self::assertStringContainsString('Calculated value (frozen)', $output);

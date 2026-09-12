@@ -40,7 +40,7 @@ final class CorrectionTest extends TestCase
         self::assertSame($recordedAt, $correction->recordedAt);
     }
 
-    /** @return iterable<string, array{string}> */
+    /** @return iterable<string, array{amount: Money}> */
     public static function providePositiveCases(): iterable
     {
         yield 'it supports positive amount' => [
